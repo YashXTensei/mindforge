@@ -1,27 +1,36 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import Register from './pages/Register'
-import Login from './pages/Login'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import Register from './pages/Register';
+import Login from './pages/Login';
+import Layout from './components/Layout';
+import Notes from './pages/notes';
 
+// Yeh ek temporary component hai, isko hum baad me delete karke alag file banayenge
 function Dashboard() {
     return (
-        <div style={{ padding: '40px' }}>
-            <h1>Welcome to MindForge Dashboard! 🎉</h1>
-            <p>You are logged in.</p>
+        <div>
+            <h1>Dashboard</h1>
+            <p>Welcome to your MindForge workspace.</p>
         </div>
-    )
+    );
 }
 
 function App() {
     return (
         <BrowserRouter>
             <Routes>
-                <Route path="/" element={<h1>MindForge - Home</h1>} />
+                {/* Public Routes (Bina Layout ke) */}
+                <Route path="/" element={<Navigate to="/login" replace />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/login" element={<Login />} />
-                <Route path="/dashboard" element={<Dashboard />} />
+
+                {/* Protected Routes (Layout ke andar) */}
+                <Route element={<Layout />}>
+                    <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/notes" element={<Notes />} />
+                </Route>
             </Routes>
         </BrowserRouter>
-    )
+    );
 }
 
-export default App
+export default App;
