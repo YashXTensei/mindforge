@@ -8,3 +8,23 @@ export const fetchNotes = async () => {
     // Hum dono handle kar lete hain:
     return response.data.results || response.data;
 };
+
+// Naya note banaye
+export const createNote = async (noteData) => {
+    // noteData me { title: '...', content: '...' } aayega
+    const response = await API.post('/notes/', noteData);
+    return response.data;
+};
+
+// Update existing note
+export const updateNote = async ({ id, noteData }) => {
+    // PATCH request sirf unhi fields ko update karti hai jo hum bhejte hain
+    const response = await API.patch(`/notes/${id}/`, noteData);
+    return response.data;
+};
+
+// Delete note
+export const deleteNote = async (id) => {
+    const response = await API.delete(`/notes/${id}/`);
+    return response.data;
+};
