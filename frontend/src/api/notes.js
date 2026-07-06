@@ -1,11 +1,8 @@
 import API from './axios';
 
-// Get all notes
-export const fetchNotes = async () => {
-    const response = await API.get('/notes/');
-    // DRF Cursor pagination usually results in response.data.results me actual data hota hai
-    // Par abhi agar pagination nahi bhi chal rahi toh backend array dega.
-    // Hum dono handle kar lete hain:
+// Get all notes (with optional filters)
+export const fetchNotes = async (filters = {}) => {
+    const response = await API.get('/notes/', { params: filters });
     return response.data.results || response.data;
 };
 
@@ -26,5 +23,37 @@ export const updateNote = async ({ id, noteData }) => {
 // Delete note
 export const deleteNote = async (id) => {
     const response = await API.delete(`/notes/${id}/`);
+    return response.data;
+};
+
+// =====================
+// Categories API
+// =====================
+
+// Sabhi categories fetch karo
+export const fetchCategories = async () => {
+    const response = await API.get('/categories/');
+    return response.data.results || response.data;
+};
+
+// Nayi category banao
+export const createCategory = async (categoryData) => {
+    const response = await API.post('/categories/', categoryData);
+    return response.data;
+};
+
+// =====================
+// Tags API
+// =====================
+
+// Sabhi tags fetch karo
+export const fetchTags = async () => {
+    const response = await API.get('/tags/');
+    return response.data.results || response.data;
+};
+
+// Naya tag banao
+export const createTag = async (tagData) => {
+    const response = await API.post('/tags/', tagData);
     return response.data;
 };

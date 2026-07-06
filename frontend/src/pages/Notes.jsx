@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { fetchNotes, createNote, updateNote , deleteNote } from '../api/notes';
-import { Plus, X, Edit2 , Pencil , Trash2} from 'lucide-react';
+import { fetchNotes, createNote, updateNote, deleteNote, fetchCategories, fetchTags } from '../api/notes';
+import { Plus, X, Pencil, Trash2, Filter } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 export default function Notes() {
     const queryClient = useQueryClient(); 
@@ -10,16 +12,37 @@ export default function Notes() {
     const [showForm, setShowForm] = useState(false);
     
     // Form States
-    const [editingId, setEditingId] = useState(null); // Agar null nahi hai, matlab edit mode chal raha hai
+    const [editingId, setEditingId] = useState(null); 
+
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
 
+    // Filter States
+    const [selectedCategory, setSelectedCategory] = useState('');  // '' means "All"
+    const [selectedTag, setSelectedTag] = useState('');
+
+    // Build filters object - sirf non-empty values bhejo
+    const activeFilters = {};
+    if (selectedCategory) activeFilters.category = selectedCategory;
+    if (selectedTag) activeFilters.tag = selectedTag;
+
     // --- Queries & Mutations ---
     const { data: notes, isLoading, isError } = useQuery({
-        queryKey: ['notes'],
-        queryFn: fetchNotes,
+        queryKey: ['notes', activeFilters],  // Filter change = fresh fetch!
+        queryFn: () => fetchNotes(activeFilters),
     });
 
+    // Categories fetch karo
+    const { data: categories } = useQuery({
+        queryKey: ['categories'],
+        queryFn: fetchCategories,
+    });
+
+    // Tags fetch karo
+    const { data: tags } = useQuery({
+        queryKey: ['tags'],
+        queryFn: fetchTags,
+    });
     const createMutation = useMutation({
         mutationFn: createNote,
         onSuccess: () => {
@@ -102,6 +125,60 @@ export default function Notes() {
                 </button>
             </div>
 
+            {/* Filter Bar */}
+            <div style={{
+                display: 'flex', gap: '15px', marginBottom: '20px',
+                alignItems: 'center', flexWrap: 'wrap'
+            }}>
+                <Filter size={18} style={{ color: '#aaa' }} />
+
+                {/* Category Dropdown */}
+                <select
+                    value={selectedCategory}
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    style={{
+                        padding: '8px 12px', borderRadius: '6px',
+                        border: '1px solid #444', backgroundColor: '#2A2A2A',
+                        color: 'white', cursor: 'pointer', fontSize: '14px'
+                    }}
+                >
+                    <option value="">All Categories</option>
+                    {categories?.map((cat) => (
+                        <option key={cat.id} value={cat.id}>{cat.name}</option>
+                    ))}
+                </select>
+
+                {/* Tag Dropdown */}
+                <select
+                    value={selectedTag}
+                    onChange={(e) => setSelectedTag(e.target.value)}
+                    style={{
+                        padding: '8px 12px', borderRadius: '6px',
+                        border: '1px solid #444', backgroundColor: '#2A2A2A',
+                        color: 'white', cursor: 'pointer', fontSize: '14px'
+                    }}
+                >
+                    <option value="">All Tags</option>
+                    {tags?.map((tag) => (
+                        <option key={tag.id} value={tag.id}>{tag.name}</option>
+                    ))}
+                </select>
+
+                {/* Clear Filters button - sirf dikhao jab koi filter active ho */}
+                {(selectedCategory || selectedTag) && (
+                    <button
+                        onClick={() => { setSelectedCategory(''); setSelectedTag(''); }}
+                        style={{
+                            padding: '8px 12px', borderRadius: '6px',
+                            border: '1px solid #555', backgroundColor: 'transparent',
+                            color: '#ff6b6b', cursor: 'pointer', fontSize: '13px'
+                        }}
+                    >
+                        Clear Filters ✕
+                    </button>
+                )}
+            </div>
+
             {/* Create / Edit Form */}
             {showForm && (
                 <form onSubmit={handleSubmit} style={{
@@ -141,7 +218,12 @@ export default function Notes() {
 
             {/* Notes List */}
             {notes?.length === 0 ? (
-                <p style={{ color: '#aaa' }}>No notes found. Create your first note!</p>
+                <p style={{ color: '#aaa' }}>
+                    {(selectedCategory || selectedTag)
+                        ? 'No notes found for this filter. Try changing or clearing the filters! 🔍'
+                        : 'No notes yet. Create your first note! ✍️'
+                    }
+                </p>
             ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
                     {notes?.map((note) => (
@@ -153,12 +235,22 @@ export default function Notes() {
                                 <h3 style={{ margin: '0 0 10px 0', color: 'white' }}>
                                     {note.is_pinned && '📌 '} {note.title}
                                 </h3>
-                                <p style={{ margin: 0, color: '#aaa', fontSize: '14px', whiteSpace: 'pre-wrap' }}>
-                                    {note.content.length > 100 ? note.content.substring(0, 100) + '...' : note.content}
-                                </p>
+                                <div style={{ 
+                                    margin: 0, 
+                                    color: '#ccc', 
+                                    fontSize: '15px',
+                                    display: '-webkit-box',
+                                    WebkitLineClamp: 3, // Sirf 3 lines dikhayega, uske baad ... lag jayega
+                                    WebkitBoxOrient: 'vertical',
+                                    overflow: 'hidden'
+                                }}>
+                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                        {note.content}
+                                    </ReactMarkdown>
+                                </div>
                             </div>
                             
-                                                        {/* Action Buttons Container */}
+                                {/* Action Buttons Container */}
                             <div style={{ display: 'flex', gap: '10px', marginLeft: '15px' }}>
                                 <button 
                                     onClick={() => handleEditClick(note)}
@@ -170,7 +262,7 @@ export default function Notes() {
                                 >
                                     <Pencil size={18} />
                                 </button>
-                                {/* Naya Delete Button */}
+                                {/* Delete Button */}
                                 <button 
                                     onClick={() => handleDeleteClick(note.id)}
                                     disabled={deleteMutation.isPending} // Delete hote waqt disable kardo
