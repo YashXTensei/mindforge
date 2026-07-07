@@ -10,6 +10,7 @@ function Dashboard() {
         <div>
             <h1>Dashboard</h1>
             <p>Welcome to your MindForge workspace.</p>
+            <p> Owner , Lord Yash </p>
         </div>
     );
 }

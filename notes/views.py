@@ -47,10 +47,12 @@ class NoteViewSet(viewsets.ModelViewSet):
         if category_id:
             queryset = queryset.filter(category_id=category_id)
             
-        # Jaise /api/notes/?tag=2
-        tag_id = self.request.query_params.get('tag')
-        if tag_id:
-            queryset = queryset.filter(tags__id=tag_id)
+        # Multiple tags filter: /api/notes/?tags=1,3,5 (AND logic — note mein saare tags hone chahiye)
+        tags_param = self.request.query_params.get('tags')
+        if tags_param:
+            tag_ids = tags_param.split(',')
+            for tag_id in tag_ids:
+                queryset = queryset.filter(tags__id=tag_id)
             
         # Pinned notes filter: /api/notes/?is_pinned=true
         is_pinned = self.request.query_params.get('is_pinned')

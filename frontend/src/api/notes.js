@@ -42,6 +42,12 @@ export const createCategory = async (categoryData) => {
     return response.data;
 };
 
+// Category delete karo
+export const deleteCategory = async (id) => {
+    const response = await API.delete(`/categories/${id}/`);
+    return response.data;
+};
+
 // =====================
 // Tags API
 // =====================
@@ -55,5 +61,11 @@ export const fetchTags = async () => {
 // Naya tag banao
 export const createTag = async (tagData) => {
     const response = await API.post('/tags/', tagData);
+    return response.data;
+};
+
+// Tag delete karo
+export const deleteTag = async (id) => {
+    const response = await API.delete(`/tags/${id}/`);
     return response.data;
 };
