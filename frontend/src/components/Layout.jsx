@@ -1,5 +1,5 @@
 import { Outlet, Link, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, StickyNote, LogOut } from 'lucide-react';
+import { LayoutDashboard, StickyNote, LogOut, User } from 'lucide-react';
 
 export default function Layout() {
     const navigate = useNavigate();
@@ -33,6 +33,9 @@ export default function Layout() {
                     </Link>
                     <Link to="/notes" style={{ color: 'white', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '10px' }}>
                         <StickyNote size={20} /> Notes
+                    </Link>
+                    <Link to="/profile" style={{ color: 'white', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <User size={20} /> Profile
                     </Link>
                 </nav>
 

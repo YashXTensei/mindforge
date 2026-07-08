@@ -3,17 +3,8 @@ import Register from './pages/Register';
 import Login from './pages/Login';
 import Layout from './components/Layout';
 import Notes from './pages/notes';
-
-// Yeh ek temporary component hai, isko hum baad me delete karke alag file banayenge
-function Dashboard() {
-    return (
-        <div>
-            <h1>Dashboard</h1>
-            <p>Welcome to your MindForge workspace.</p>
-            <p> Owner , Lord Yash </p>
-        </div>
-    );
-}
+import Profile from './pages/Profile';
+import Dashboard from './pages/Dashboard';
 
 function App() {
     return (
@@ -28,6 +19,7 @@ function App() {
                 <Route element={<Layout />}>
                     <Route path="/dashboard" element={<Dashboard />} />
                     <Route path="/notes" element={<Notes />} />
+                    <Route path="/profile" element={<Profile />} />
                 </Route>
             </Routes>
         </BrowserRouter>

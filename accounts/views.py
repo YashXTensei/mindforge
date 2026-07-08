@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth.models import User
 
-
+from rest_framework.permissions import AllowAny, IsAuthenticated
 @api_view(['POST' , 'GET'])
 @permission_classes([AllowAny])
 def register(request):
@@ -54,3 +54,16 @@ def register(request):
 @permission_classes([AllowAny])
 def hello_world(request):
     return Response({"message": "Hello from Django Backend! 🚀"})
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_user_profile(request):
+    """
+    Returns details of the currently logged-in user.
+    """
+    user = request.user
+    return Response({
+        "username": user.username,
+        "email": user.email,
+        "date_joined": user.date_joined,
+    })
