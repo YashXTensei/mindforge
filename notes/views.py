@@ -1,6 +1,7 @@
 from rest_framework import viewsets, filters
 from rest_framework.permissions import IsAuthenticated
-from .models import Category, Tag, Note
+from .models import Note
+from taxonomy.models import Category, Tag
 from .serializers import CategorySerializer, TagSerializer, NoteSerializer
 
 class CategoryViewSet(viewsets.ModelViewSet):

@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import Category, Tag, Note
+from .models import Note
+from taxonomy.models import Category, Tag
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:

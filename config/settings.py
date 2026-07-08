@@ -39,7 +39,8 @@ INSTALLED_APPS = [
     # Local apps
     'accounts',
     'notes',
-    'goals',
+    'taxonomy',
+    'vault',
 ]
 
 MIDDLEWARE = [
