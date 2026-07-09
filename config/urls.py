@@ -5,6 +5,8 @@ from rest_framework_simplejwt.views import (
     TokenRefreshView,
 )
 from accounts.views import hello_world, register , get_user_profile
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -17,4 +19,8 @@ urlpatterns = [
     path('api/auth/me/', get_user_profile, name='user_profile'),
     
     path('api/', include('notes.urls')),
+    path('api/vault/', include('vault.urls')),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

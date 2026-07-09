@@ -159,3 +159,11 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # Default primary key field type
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Media files (user uploads)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+# Vault settings
+MAX_PDF_UPLOAD_SIZE = 20 * 1024 * 1024  # 20MB
+ALLOWED_UPLOAD_EXTENSIONS = ['.pdf']

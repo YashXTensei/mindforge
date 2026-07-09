@@ -1,22 +1,10 @@
 from rest_framework import serializers
 from .models import Note
-from taxonomy.models import Category, Tag
+from taxonomy.serializers import CategorySerializer, TagSerializer  # <-- taxonomy se!
+from taxonomy.models import Category, Tag  # <-- models bhi taxonomy se
 
-class CategorySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Category
-        fields = ['id', 'name', 'created_at']
-        read_only_fields = ['id', 'created_at']
-
-class TagSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Tag
-        fields = ['id', 'name']
-        read_only_fields = ['id']
 
 class NoteSerializer(serializers.ModelSerializer):
-    # Category aur Tags ko detail mein read karne ke liye (sirf ID na dikhe)
-    # Pura category object aaye response mein, par write karte time id lenge
     category_detail = CategorySerializer(source='category', read_only=True)
     tags_detail = TagSerializer(source='tags', many=True, read_only=True)
 
