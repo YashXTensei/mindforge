@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchPDFs, uploadPDF, updatePDF, deletePDF, fetchResources, createResource, updateResource, deleteResource } from '../api/vault';
-import { fetchCategories, fetchTags } from '../api/notes';
-import { Plus, X, Trash2, FileText, Link2, Upload, Star, ExternalLink } from 'lucide-react';
+import { fetchCategories, fetchTags, createCategory, createTag } from '../api/notes';
+import { Plus, X, Trash2, FileText, Link2, Upload, Star, ExternalLink, Pencil } from 'lucide-react';
 
 // Helper: bytes → human readable
 function formatFileSize(bytes) {
@@ -16,6 +16,7 @@ export default function Vault() {
     const queryClient = useQueryClient();
     const [activeTab, setActiveTab] = useState('pdfs');
     const [showForm, setShowForm] = useState(false);
+    const [editingId, setEditingId] = useState(null);
 
     // ========== PDF Form States ==========
     const [pdfTitle, setPdfTitle] = useState('');
@@ -38,6 +39,10 @@ export default function Vault() {
     const [filterTags, setFilterTags] = useState([]);
     const [filterType, setFilterType] = useState('');       // Resources ke liye
     const [filterFavorite, setFilterFavorite] = useState(''); // '', 'true', 'false'
+
+    // ========== Inline Create States ==========
+    const [newCategoryName, setNewCategoryName] = useState('');
+    const [newTagName, setNewTagName] = useState('');
 
     // ========== Queries ==========
 
@@ -99,17 +104,44 @@ export default function Vault() {
 
     const updatePDFMutation = useMutation({
         mutationFn: updatePDF,
-        onSuccess: () => queryClient.invalidateQueries(['pdfs']),
+        onSuccess: () => {
+            queryClient.invalidateQueries(['pdfs']);
+            resetForm();
+        },
     });
 
     const updateResourceMutation = useMutation({
         mutationFn: updateResource,
-        onSuccess: () => queryClient.invalidateQueries(['resources']),
+        onSuccess: () => {
+            queryClient.invalidateQueries(['resources']);
+            resetForm();
+        },
+    });
+
+    const createCategoryMutation = useMutation({
+        mutationFn: createCategory,
+        onSuccess: (data) => {
+            queryClient.invalidateQueries(['categories']);
+            setPdfCategory(data.id);
+            setResCategory(data.id);
+            setNewCategoryName('');
+        },
+    });
+
+    const createTagMutation = useMutation({
+        mutationFn: createTag,
+        onSuccess: (data) => {
+            queryClient.invalidateQueries(['tags']);
+            setPdfTags(prev => [...prev, data.id]);
+            setResTags(prev => [...prev, data.id]);
+            setNewTagName('');
+        },
     });
 
     // ========== Helpers ==========
     const resetForm = () => {
         setShowForm(false);
+        setEditingId(null);
         // PDF
         setPdfTitle('');
         setPdfDescription('');
@@ -124,17 +156,50 @@ export default function Vault() {
         setResType('other');
         setResCategory('');
         setResTags([]);
+        
+        setNewCategoryName('');
+        setNewTagName('');
+    };
+
+    const handleEditPDFClick = (pdf) => {
+        setEditingId(pdf.id);
+        setPdfTitle(pdf.title);
+        setPdfDescription(pdf.description || '');
+        setPdfCategory(pdf.category || '');
+        setPdfTags(pdf.tags_detail?.map(t => t.id) || []);
+        setSelectedFile(null); // Optional to re-upload file
+        setActiveTab('pdfs');
+        setShowForm(true);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const handleEditResourceClick = (res) => {
+        setEditingId(res.id);
+        setResTitle(res.title);
+        setResUrl(res.url);
+        setResDescription(res.description || '');
+        setResType(res.resource_type || 'other');
+        setResCategory(res.category || '');
+        setResTags(res.tags_detail?.map(t => t.id) || []);
+        setActiveTab('resources');
+        setShowForm(true);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
     const handlePDFSubmit = (e) => {
         e.preventDefault();
         const formData = new FormData();
         formData.append('title', pdfTitle);
-        formData.append('file', selectedFile);
+        if (selectedFile) formData.append('file', selectedFile);
         if (pdfDescription) formData.append('description', pdfDescription);
         if (pdfCategory) formData.append('category', pdfCategory);
         pdfTags.forEach(tagId => formData.append('tags', tagId));
-        uploadMutation.mutate(formData);
+        
+        if (editingId) {
+            updatePDFMutation.mutate({ id: editingId, pdfData: formData });
+        } else {
+            uploadMutation.mutate(formData);
+        }
     };
 
     const handleResourceSubmit = (e) => {
@@ -147,7 +212,11 @@ export default function Vault() {
             category: resCategory || null,
             tags: resTags,
         };
-        createResourceMutation.mutate(resourceData);
+        if (editingId) {
+            updateResourceMutation.mutate({ id: editingId, resourceData });
+        } else {
+            createResourceMutation.mutate(resourceData);
+        }
     };
 
     // Tab button style helper
@@ -243,6 +312,7 @@ export default function Vault() {
                 >
                     <option value="">All</option>
                     <option value="true">⭐ Favorites</option>
+                    <option value="false">Not Favorites</option>
                 </select>
 
                 {/* Tag Chips */}
@@ -290,7 +360,7 @@ export default function Vault() {
                             backgroundColor: '#1E1E1E', padding: '20px', borderRadius: '8px',
                             marginBottom: '25px', border: '1px solid #333', display: 'flex', flexDirection: 'column', gap: '15px'
                         }}>
-                            <h3 style={{ margin: 0, color: '#A076F9' }}>Upload PDF</h3>
+                            <h3 style={{ margin: 0, color: '#A076F9' }}>{editingId ? 'Edit PDF' : 'Upload PDF'}</h3>
 
                             <input
                                 type="text" placeholder="PDF Title" value={pdfTitle} required
@@ -310,7 +380,7 @@ export default function Vault() {
                                     PDF File
                                 </label>
                                 <input
-                                    type="file" accept=".pdf" ref={fileInputRef} required
+                                    type="file" accept=".pdf" ref={fileInputRef} required={!editingId}
                                     onChange={(e) => setSelectedFile(e.target.files[0])}
                                     style={{ color: '#ccc', fontSize: '14px' }}
                                 />
@@ -330,6 +400,42 @@ export default function Vault() {
                                     <option key={cat.id} value={cat.id}>{cat.name}</option>
                                 ))}
                             </select>
+
+                            {/* Inline Create - New Category */}
+                            <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                                <input
+                                    type="text"
+                                    placeholder="+ New category name..."
+                                    value={newCategoryName}
+                                    onChange={(e) => setNewCategoryName(e.target.value)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' && newCategoryName.trim()) {
+                                            e.preventDefault();
+                                            createCategoryMutation.mutate({ name: newCategoryName.trim() });
+                                        }
+                                    }}
+                                    style={{
+                                        padding: '8px', borderRadius: '4px', flex: 1, fontSize: '13px',
+                                        border: '1px solid #333', backgroundColor: '#1a1a1a', color: '#ccc'
+                                    }}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        if (newCategoryName.trim()) {
+                                            createCategoryMutation.mutate({ name: newCategoryName.trim() });
+                                        }
+                                    }}
+                                    disabled={!newCategoryName.trim()}
+                                    style={{
+                                        padding: '8px 12px', borderRadius: '4px', fontSize: '13px',
+                                        border: 'none', backgroundColor: '#A076F9', color: 'white',
+                                        cursor: 'pointer', opacity: !newCategoryName.trim() ? 0.5 : 1
+                                    }}
+                                >
+                                    Add
+                                </button>
+                            </div>
 
                             {/* Tags */}
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
@@ -354,21 +460,57 @@ export default function Vault() {
                                 })}
                             </div>
 
-                            <button type="submit" disabled={uploadMutation.isPending}
+                            {/* Inline Create - New Tag */}
+                            <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                                <input
+                                    type="text"
+                                    placeholder="+ New tag name..."
+                                    value={newTagName}
+                                    onChange={(e) => setNewTagName(e.target.value)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' && newTagName.trim()) {
+                                            e.preventDefault();
+                                            createTagMutation.mutate({ name: newTagName.trim() });
+                                        }
+                                    }}
+                                    style={{
+                                        padding: '8px', borderRadius: '4px', flex: 1, fontSize: '13px',
+                                        border: '1px solid #333', backgroundColor: '#1a1a1a', color: '#ccc'
+                                    }}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        if (newTagName.trim()) createTagMutation.mutate({ name: newTagName.trim() });
+                                    }}
+                                    disabled={!newTagName.trim()}
+                                    style={{
+                                        padding: '8px 12px', borderRadius: '4px', fontSize: '13px',
+                                        border: 'none', backgroundColor: '#A076F9', color: 'white',
+                                        cursor: 'pointer', opacity: !newTagName.trim() ? 0.5 : 1
+                                    }}
+                                >
+                                    Add
+                                </button>
+                            </div>
+
+                            <button type="submit" disabled={uploadMutation.isPending || updatePDFMutation.isPending}
                                 style={{
                                     backgroundColor: '#A076F9', color: 'white', border: 'none', padding: '10px 20px',
                                     borderRadius: '4px', cursor: 'pointer', alignSelf: 'flex-start',
                                     display: 'flex', alignItems: 'center', gap: '8px',
-                                    opacity: uploadMutation.isPending ? 0.6 : 1
+                                    opacity: (uploadMutation.isPending || updatePDFMutation.isPending) ? 0.6 : 1
                                 }}
                             >
                                 <Upload size={16} />
-                                {uploadMutation.isPending ? 'Uploading...' : 'Upload PDF'}
+                                {(uploadMutation.isPending || updatePDFMutation.isPending) ? 'Saving...' : (editingId ? 'Save Changes' : 'Upload PDF')}
                             </button>
 
-                            {uploadMutation.isError && (
+                            {(uploadMutation.isError || updatePDFMutation.isError) && (
                                 <p style={{ color: '#ff4d4d', margin: 0, fontSize: '14px' }}>
-                                    Upload failed: {uploadMutation.error?.response?.data?.file?.[0] || 'Something went wrong'}
+                                    Error: {JSON.stringify(
+                                        uploadMutation.error?.response?.data || updatePDFMutation.error?.response?.data || 'Something went wrong'
+                                    )}
                                 </p>
                             )}
                         </form>
@@ -432,6 +574,13 @@ export default function Vault() {
                                     {/* Actions */}
                                     <div style={{ display: 'flex', gap: '8px' }}>
                                         <button
+                                            onClick={() => handleEditPDFClick(pdf)}
+                                            style={{ background: 'transparent', border: 'none', color: '#aaa', cursor: 'pointer', padding: '5px' }}
+                                            title="Edit PDF"
+                                        >
+                                            <Pencil size={18} />
+                                        </button>
+                                        <button
                                             onClick={() => updatePDFMutation.mutate({ 
                                                 id: pdf.id, 
                                                 pdfData: { is_favorite: !pdf.is_favorite } 
@@ -468,7 +617,7 @@ export default function Vault() {
                             backgroundColor: '#1E1E1E', padding: '20px', borderRadius: '8px',
                             marginBottom: '25px', border: '1px solid #333', display: 'flex', flexDirection: 'column', gap: '15px'
                         }}>
-                            <h3 style={{ margin: 0, color: '#A076F9' }}>Add Resource</h3>
+                            <h3 style={{ margin: 0, color: '#A076F9' }}>{editingId ? 'Edit Resource' : 'Add Resource'}</h3>
 
                             <input
                                 type="text" placeholder="Resource Title" value={resTitle} required
@@ -510,6 +659,42 @@ export default function Vault() {
                                 ))}
                             </select>
 
+                            {/* Inline Create - New Category */}
+                            <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                                <input
+                                    type="text"
+                                    placeholder="+ New category name..."
+                                    value={newCategoryName}
+                                    onChange={(e) => setNewCategoryName(e.target.value)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' && newCategoryName.trim()) {
+                                            e.preventDefault();
+                                            createCategoryMutation.mutate({ name: newCategoryName.trim() });
+                                        }
+                                    }}
+                                    style={{
+                                        padding: '8px', borderRadius: '4px', flex: 1, fontSize: '13px',
+                                        border: '1px solid #333', backgroundColor: '#1a1a1a', color: '#ccc'
+                                    }}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        if (newCategoryName.trim()) {
+                                            createCategoryMutation.mutate({ name: newCategoryName.trim() });
+                                        }
+                                    }}
+                                    disabled={!newCategoryName.trim()}
+                                    style={{
+                                        padding: '8px 12px', borderRadius: '4px', fontSize: '13px',
+                                        border: 'none', backgroundColor: '#A076F9', color: 'white',
+                                        cursor: 'pointer', opacity: !newCategoryName.trim() ? 0.5 : 1
+                                    }}
+                                >
+                                    Add
+                                </button>
+                            </div>
+
                             {/* Tags */}
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                                 {tags?.map(tag => {
@@ -533,15 +718,57 @@ export default function Vault() {
                                 })}
                             </div>
 
-                            <button type="submit" disabled={createResourceMutation.isPending}
+                            {/* Inline Create - New Tag */}
+                            <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                                <input
+                                    type="text"
+                                    placeholder="+ New tag name..."
+                                    value={newTagName}
+                                    onChange={(e) => setNewTagName(e.target.value)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' && newTagName.trim()) {
+                                            e.preventDefault();
+                                            createTagMutation.mutate({ name: newTagName.trim() });
+                                        }
+                                    }}
+                                    style={{
+                                        padding: '8px', borderRadius: '4px', flex: 1, fontSize: '13px',
+                                        border: '1px solid #333', backgroundColor: '#1a1a1a', color: '#ccc'
+                                    }}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        if (newTagName.trim()) createTagMutation.mutate({ name: newTagName.trim() });
+                                    }}
+                                    disabled={!newTagName.trim()}
+                                    style={{
+                                        padding: '8px 12px', borderRadius: '4px', fontSize: '13px',
+                                        border: 'none', backgroundColor: '#A076F9', color: 'white',
+                                        cursor: 'pointer', opacity: !newTagName.trim() ? 0.5 : 1
+                                    }}
+                                >
+                                    Add
+                                </button>
+                            </div>
+
+                            <button type="submit" disabled={createResourceMutation.isPending || updateResourceMutation.isPending}
                                 style={{
                                     backgroundColor: '#A076F9', color: 'white', border: 'none', padding: '10px 20px',
                                     borderRadius: '4px', cursor: 'pointer', alignSelf: 'flex-start',
-                                    opacity: createResourceMutation.isPending ? 0.6 : 1
+                                    opacity: (createResourceMutation.isPending || updateResourceMutation.isPending) ? 0.6 : 1
                                 }}
                             >
-                                {createResourceMutation.isPending ? 'Saving...' : 'Save Resource'}
+                                {(createResourceMutation.isPending || updateResourceMutation.isPending) ? 'Saving...' : (editingId ? 'Save Changes' : 'Save Resource')}
                             </button>
+                            
+                            {(createResourceMutation.isError || updateResourceMutation.isError) && (
+                                <p style={{ color: '#ff4d4d', margin: 0, fontSize: '14px' }}>
+                                    Error: {JSON.stringify(
+                                        createResourceMutation.error?.response?.data || updateResourceMutation.error?.response?.data || 'Something went wrong'
+                                    )}
+                                </p>
+                            )}
                         </form>
                     )}
 
@@ -586,6 +813,13 @@ export default function Vault() {
 
                                     {/* Actions */}
                                     <div style={{ display: 'flex', gap: '8px' }}>
+                                        <button
+                                            onClick={() => handleEditResourceClick(res)}
+                                            style={{ background: 'transparent', border: 'none', color: '#aaa', cursor: 'pointer', padding: '5px' }}
+                                            title="Edit Resource"
+                                        >
+                                            <Pencil size={18} />
+                                        </button>
                                         <a href={res.url} target="_blank" rel="noopener noreferrer"
                                             style={{ color: '#A076F9', padding: '5px' }} title="Open Link"
                                         >
