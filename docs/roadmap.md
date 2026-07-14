@@ -120,6 +120,10 @@ Turn MindForge from a notes app into a knowledge repository.
 
 ---
 
+✅done {date : 14th july 2026}
+
+💖polishing phase 2 {15th july 2026 to xxth july 2026} 
+
 # Phase 3 — RAG Engine ⭐
 
 **Time: 5-6 weeks**
