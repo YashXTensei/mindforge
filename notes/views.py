@@ -1,5 +1,6 @@
-from rest_framework import viewsets, filters
+from rest_framework import viewsets, filters, exceptions
 from rest_framework.permissions import IsAuthenticated
+from django.db import IntegrityError
 from .models import Note
 from taxonomy.models import Category, Tag
 from .serializers import CategorySerializer, TagSerializer, NoteSerializer
@@ -14,7 +15,10 @@ class CategoryViewSet(viewsets.ModelViewSet):
 
     # Category create karte time user automatically assign karo
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        try:
+            serializer.save(user=self.request.user)
+        except IntegrityError:
+            raise exceptions.ValidationError({"name": ["You already have a category with this name."]})
 
 
 class TagViewSet(viewsets.ModelViewSet):
@@ -25,7 +29,10 @@ class TagViewSet(viewsets.ModelViewSet):
         return Tag.objects.filter(user=self.request.user)
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        try:
+            serializer.save(user=self.request.user)
+        except IntegrityError:
+            raise exceptions.ValidationError({"name": ["You already have a tag with this name."]})
 
 
 class NoteViewSet(viewsets.ModelViewSet):

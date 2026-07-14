@@ -1,5 +1,6 @@
 from django.contrib.postgres.search import SearchVector
-from django.contrib.postgres.aggregates import StringAgg
+from django.db.models.aggregates import StringAgg
+from django.db.models import Value
 from notes.models import Note
 from vault.models import PDF, Resource
 
@@ -15,7 +16,7 @@ class BaseSearchProvider:
     def get_queryset(self):
         """Return the base queryset to search over."""
         return self.model.objects.select_related('category').prefetch_related('tags').annotate(
-            tags_string=StringAgg('tags__name', delimiter=' ')
+            tags_string=StringAgg('tags__name', delimiter=Value(' '))
         )
 
     def format_result(self, instance):
@@ -59,7 +60,7 @@ class NoteSearchProvider(BaseSearchProvider):
         return (instance.content[:150] + '...') if len(instance.content) > 150 else instance.content
 
     def get_url(self, instance):
-        return '/' # Notes are on the home page
+        return f'/notes/{instance.id}'
 
 
 class PDFSearchProvider(BaseSearchProvider):

@@ -32,7 +32,7 @@ export default function Search() {
 
     const handleResultClick = (result) => {
         if (result.type === 'note') {
-            navigate('/notes');
+            navigate(`/notes/${result.id}`);
         } else if (result.type === 'pdf') {
             if (result.url) {
                 // If it's a full URL, use it, otherwise prepend backend URL

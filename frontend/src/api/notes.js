@@ -6,6 +6,12 @@ export const fetchNotes = async (filters = {}) => {
     return response.data.results || response.data;
 };
 
+// Fetch single note by ID
+export const fetchNote = async (id) => {
+    const response = await API.get(`/notes/${id}/`);
+    return response.data;
+};
+
 // Naya note banaye
 export const createNote = async (noteData) => {
     // noteData me { title: '...', content: '...' } aayega

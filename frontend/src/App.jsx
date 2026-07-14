@@ -7,6 +7,7 @@ import Profile from './pages/Profile';
 import Dashboard from './pages/Dashboard';
 import Vault from './pages/Vault';
 import Search from './pages/Search';
+import NoteView from './pages/NoteView';
 
 function App() {
     return (
@@ -24,6 +25,7 @@ function App() {
                     <Route path="/vault" element={<Vault />} />
                     <Route path="/search" element={<Search />} />
                     <Route path="/profile" element={<Profile />} />
+                    <Route path="/notes/:id" element={<NoteView />} />
                 </Route>
             </Routes>
         </BrowserRouter>

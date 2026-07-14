@@ -4,6 +4,7 @@ import { fetchNotes, createNote, updateNote, deleteNote, fetchCategories, fetchT
 import { Plus, X, Pencil, Trash2, Filter, ChevronDown } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { useNavigate } from 'react-router-dom';
 
 export default function Notes() {
     const queryClient = useQueryClient(); 
@@ -50,6 +51,8 @@ export default function Notes() {
         placeholderData: keepPreviousData, // Purana data dikhao jab tak naya aa raha hai — no blink!
     });
 
+    const navigate = useNavigate();
+    
     // Categories fetch karo
     const { data: categories } = useQuery({
         queryKey: ['categories'],
@@ -542,10 +545,17 @@ export default function Notes() {
             ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
                     {notes?.map((note) => (
-                        <div key={note.id} style={{
-                            backgroundColor: '#2A2A2A', padding: '20px', borderRadius: '8px',
-                            border: '1px solid #333', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start'
-                        }}>
+                        <div 
+                            key={note.id} 
+                            onClick={() => navigate(`/notes/${note.id}`)}
+                            style={{
+                                backgroundColor: '#2A2A2A', padding: '20px', borderRadius: '8px',
+                                border: '1px solid #333', display: 'flex', justifyContent: 'space-between', 
+                                alignItems: 'flex-start', cursor: 'pointer', transition: 'transform 0.2s, borderColor 0.2s'
+                            }}
+                            onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#A076F9'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.transform = 'translateY(0)'; }}
+                        >
                             <div style={{ flexGrow: 1 }}>
                                 <h3 style={{ margin: '0 0 10px 0', color: 'white' }}>
                                     {note.is_pinned && '📌 '} {note.title}
@@ -568,7 +578,7 @@ export default function Notes() {
                                 {/* Action Buttons Container */}
                             <div style={{ display: 'flex', gap: '10px', marginLeft: '15px' }}>
                                 <button 
-                                    onClick={() => handleEditClick(note)}
+                                    onClick={(e) => { e.stopPropagation(); handleEditClick(note); }}
                                     style={{ 
                                         background: 'transparent', border: 'none', color: '#aaa', 
                                         cursor: 'pointer', padding: '5px' 
@@ -579,7 +589,7 @@ export default function Notes() {
                                 </button>
                                 {/* Delete Button */}
                                 <button 
-                                    onClick={() => handleDeleteClick(note.id)}
+                                    onClick={(e) => { e.stopPropagation(); handleDeleteClick(note.id); }}
                                     disabled={deleteMutation.isPending} // Delete hote waqt disable kardo
                                     style={{ 
                                         background: 'transparent', border: 'none', color: '#ff4d4d', 
