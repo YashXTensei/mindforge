@@ -12,7 +12,7 @@ export function UploadModal({
   editingItem, 
   categories, 
   tags,
-  onSubmitPDF,
+  onSubmitDocument,
   onSubmitResource,
   isPending,
   createCategoryMutation,
@@ -24,7 +24,7 @@ export function UploadModal({
   const [category, setCategory] = useState('');
   const [selectedTags, setSelectedTags] = useState([]);
   
-  // PDF specific
+  // Document specific
   const [selectedFile, setSelectedFile] = useState(null);
   
   // Resource specific
@@ -43,7 +43,7 @@ export function UploadModal({
         setCategory(editingItem.category || '');
         setSelectedTags(editingItem.tags_detail?.map(t => t.id) || []);
         
-        if (activeTab === 'pdfs') {
+        if (activeTab === 'documents') {
           setSelectedFile(null); // Force re-upload if they want to change file
         } else {
           setUrl(editingItem.url || '');
@@ -64,14 +64,14 @@ export function UploadModal({
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (activeTab === 'pdfs') {
+    if (activeTab === 'documents') {
       const formData = new FormData();
       formData.append('title', title);
       if (selectedFile) formData.append('file', selectedFile);
       if (description) formData.append('description', description);
       if (category) formData.append('category', category);
       selectedTags.forEach(tagId => formData.append('tags', tagId));
-      onSubmitPDF(formData); 
+      onSubmitDocument(formData); 
     } else {
       const data = { 
         title, 
@@ -111,7 +111,7 @@ export function UploadModal({
     <Modal 
       isOpen={isOpen} 
       onClose={onClose} 
-      title={editingItem ? `Edit ${activeTab === 'pdfs' ? 'PDF' : 'Resource'}` : `Add ${activeTab === 'pdfs' ? 'PDF' : 'Resource'}`}
+      title={editingItem ? `Edit ${activeTab === 'documents' ? 'Document' : 'Resource'}` : `Add ${activeTab === 'documents' ? 'Document' : 'Resource'}`}
     >
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         
@@ -145,13 +145,13 @@ export function UploadModal({
           />
         </div>
 
-        {/* File Input for PDF */}
-        {activeTab === 'pdfs' && (
+        {/* File Input for Document */}
+        {activeTab === 'documents' && (
           <div className="flex flex-col gap-1 w-full">
-            <label className="text-sm font-medium text-gray-300">PDF File</label>
+            <label className="text-sm font-medium text-gray-300">File</label>
             <input
               type="file"
-              accept=".pdf"
+              accept=".pdf,.png,.jpg,.jpeg,.webp"
               required={!editingItem}
               onChange={(e) => setSelectedFile(e.target.files[0])}
               className="text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-purple-600/10 file:text-purple-400 hover:file:bg-purple-600/20"

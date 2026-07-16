@@ -1,29 +1,29 @@
 import API from './axios';
 
 // =====================
-// PDFs API
+// Documents API
 // =====================
 
-export const fetchPDFs = async (filters = {}) => {
-    const response = await API.get('/vault/pdfs/', { params: filters });
+export const fetchDocuments = async (filters = {}) => {
+    const response = await API.get('/vault/documents/', { params: filters });
     return response.data.results || response.data;
 };
 
-export const uploadPDF = async (pdfData) => {
-    // pdfData is a FormData object (file upload ke liye zaroori)
-    const response = await API.post('/vault/pdfs/', pdfData, {
+export const uploadDocument = async (documentData) => {
+    // documentData is a FormData object (file upload ke liye zaroori)
+    const response = await API.post('/vault/documents/', documentData, {
         headers: { 'Content-Type': 'multipart/form-data' },
     });
     return response.data;
 };
 
-export const updatePDF = async ({ id, pdfData }) => {
-    const response = await API.patch(`/vault/pdfs/${id}/`, pdfData);
+export const updateDocument = async ({ id, documentData }) => {
+    const response = await API.patch(`/vault/documents/${id}/`, documentData);
     return response.data;
 };
 
-export const deletePDF = async (id) => {
-    const response = await API.delete(`/vault/pdfs/${id}/`);
+export const deleteDocument = async (id) => {
+    const response = await API.delete(`/vault/documents/${id}/`);
     return response.data;
 };
 

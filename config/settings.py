@@ -165,5 +165,5 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 # Vault settings
-MAX_PDF_UPLOAD_SIZE = 20 * 1024 * 1024  # 20MB
-ALLOWED_UPLOAD_EXTENSIONS = ['.pdf']
+MAX_DOCUMENT_UPLOAD_SIZE = 20 * 1024 * 1024  # 20MB
+ALLOWED_UPLOAD_EXTENSIONS = ['.pdf', '.png', '.jpg', '.jpeg', '.webp']

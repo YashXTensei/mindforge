@@ -1,7 +1,9 @@
 from django.db import models
 from django.conf import settings
 from taxonomy.models import Category, Tag
-
+from django.core.validators import FileExtensionValidator
+import os
+import uuid
 
 class BaseKnowledge(models.Model):
     """
@@ -35,28 +37,32 @@ class BaseKnowledge(models.Model):
         return self.title
 
 
-def pdf_upload_path(instance, filename):
-    """
-    Files organized per user: media/pdfs/user_<id>/filename.pdf
-    This keeps uploads organized and prevents conflicts.
-    """
-    return f'pdfs/user_{instance.user.id}/{filename}'
-
-
-class PDF(BaseKnowledge):
-    """Uploaded PDF documents."""
-    file = models.FileField(upload_to=pdf_upload_path)
-    original_filename = models.CharField(max_length=255, default='', blank=True)
-    file_size = models.PositiveIntegerField(help_text='File size in bytes')
-    page_count = models.PositiveIntegerField(
-        null=True,
-        blank=True,
-        help_text='Number of pages (extracted after upload)'
+def document_upload_path(instance, filename):
+    ext = filename.split('.')[-1]
+    filename = f"{uuid.uuid4()}.{ext}"
+    return os.path.join(f"vault/{instance.user.id}/documents", filename)
+class Document(models.Model):  # Changed from PDF
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='documents')
+    title = models.CharField(max_length=255)
+    original_filename = models.CharField(max_length=255)
+    file = models.FileField(
+        upload_to=document_upload_path,
+        validators=[FileExtensionValidator(allowed_extensions=['pdf', 'png', 'jpg', 'jpeg', 'webp'])] # Image support add kar diya
     )
-
-    class Meta(BaseKnowledge.Meta):
-        verbose_name = 'PDF'
-        verbose_name_plural = 'PDFs'
+    description = models.TextField(blank=True, null=True)
+    category = models.ForeignKey('taxonomy.Category', on_delete=models.SET_NULL, null=True, blank=True, related_name='documents')
+    tags = models.ManyToManyField('taxonomy.Tag', blank=True, related_name='documents')
+    
+    file_size = models.BigIntegerField(null=True, blank=True)
+    page_count = models.IntegerField(null=True, blank=True) # Yeh image ke case mein null rahega
+    is_favorite = models.BooleanField(default=False)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    class Meta:
+        ordering = ['-created_at']
+    def __str__(self):
+        return self.title
 
 
 class Resource(BaseKnowledge):

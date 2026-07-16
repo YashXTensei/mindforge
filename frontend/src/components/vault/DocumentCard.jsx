@@ -1,5 +1,5 @@
 import React from 'react';
-import { FileText, Pencil, Star, Trash2 } from 'lucide-react';
+import { FileText, Image as ImageIcon, Pencil, Star, Trash2 } from 'lucide-react';
 import { Badge } from '../ui/Badge';
 
 // Helper: bytes → human readable
@@ -16,12 +16,15 @@ export function DocumentCard({
   onToggleFavorite, 
   onDelete 
 }) {
+  // Determine if it's an image
+  const isImage = document.file?.match(/\.(jpeg|jpg|png|webp)$/i);
+
   return (
     <div className="flex items-center gap-4 p-4 bg-gray-800/50 border border-gray-700 rounded-lg hover:bg-gray-800 transition-colors group">
       
       {/* Icon Placeholder */}
-      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-purple-500/10 text-purple-400">
-        <FileText size={24} />
+      <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-lg ${isImage ? 'bg-pink-500/10 text-pink-400' : 'bg-purple-500/10 text-purple-400'}`}>
+        {isImage ? <ImageIcon size={24} /> : <FileText size={24} />}
       </div>
 
       {/* Info Section */}

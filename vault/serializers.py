@@ -1,26 +1,24 @@
 from rest_framework import serializers
-from .models import PDF, Resource
+from .models import Document, Resource
 from taxonomy.serializers import CategorySerializer, TagSerializer
-from django.conf import settings
 import os
 from django.conf import settings as django_settings
 
-class PDFSerializer(serializers.ModelSerializer):
-    # Read operations ke liye detailed category/tags
+# vault/serializers.py (Snippet)
+class DocumentSerializer(serializers.ModelSerializer): # Name changed
     category_detail = CategorySerializer(source='category', read_only=True)
     tags_detail = TagSerializer(source='tags', many=True, read_only=True)
 
     class Meta:
-        model = PDF
+        model = Document # Model changed
         fields = [
-            'id', 'title', 'description', 'file', 'original_filename',
-            'file_size', 'page_count', 'category', 'category_detail',
-            'tags', 'tags_detail', 'is_favorite', 'created_at', 'updated_at'
+            'id', 'title', 'file', 'description', 'category', 'category_detail',
+            'tags', 'tags_detail', 'file_size', 'page_count', 'is_favorite', 
+            'created_at', 'updated_at'
         ]
-        read_only_fields = [
-            'id', 'original_filename', 'file_size',
-            'page_count', 'created_at', 'updated_at'
-        ]
+        read_only_fields = ['file_size', 'page_count']
+        
+    # Apna validate_file logic same rakho bas 10MB limit rakho
 
     def validate_file(self, value):
         # Extension check
@@ -31,7 +29,7 @@ class PDFSerializer(serializers.ModelSerializer):
                 f'Only {allowed} files are allowed.'
             )
         # Size check
-        if value.size > django_settings.MAX_PDF_UPLOAD_SIZE:
+        if value.size > django_settings.MAX_DOCUMENT_UPLOAD_SIZE:
             raise serializers.ValidationError('File size cannot exceed 20MB.')
         return value
 

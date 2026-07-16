@@ -2,7 +2,7 @@ from django.contrib.postgres.search import SearchVector
 from django.db.models.aggregates import StringAgg
 from django.db.models import Value
 from notes.models import Note
-from vault.models import PDF, Resource
+from vault.models import Document, Resource
 
 class BaseSearchProvider:
     """Base class for all search providers. Ensures a modular architecture."""
@@ -63,9 +63,9 @@ class NoteSearchProvider(BaseSearchProvider):
         return f'/notes/{instance.id}'
 
 
-class PDFSearchProvider(BaseSearchProvider):
-    model = PDF
-    type_name = 'pdf'
+class DocumentSearchProvider(BaseSearchProvider):
+    model = Document
+    type_name = 'document'
 
     def get_search_vector(self):
         return (
@@ -77,7 +77,7 @@ class PDFSearchProvider(BaseSearchProvider):
         )
 
     def get_preview(self, instance):
-        return (instance.description[:150] + '...') if len(instance.description) > 150 else instance.description
+        return (instance.description[:150] + '...') if instance.description and len(instance.description) > 150 else (instance.description or '')
 
     def get_url(self, instance):
         return instance.file.url if instance.file else None
@@ -106,6 +106,6 @@ class ResourceSearchProvider(BaseSearchProvider):
 # Registry of all active providers
 SEARCH_PROVIDERS = [
     NoteSearchProvider(),
-    PDFSearchProvider(),
+    DocumentSearchProvider(),
     ResourceSearchProvider(),
 ]

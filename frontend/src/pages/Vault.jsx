@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { fetchPDFs, uploadPDF, updatePDF, deletePDF, fetchResources, createResource, updateResource, deleteResource } from '../api/vault';
+import { fetchDocuments, uploadDocument, updateDocument, deleteDocument, fetchResources, createResource, updateResource, deleteResource } from '../api/vault';
 import { fetchCategories, fetchTags, createCategory, createTag } from '../api/notes';
 import { Plus, FileText, Link2 } from 'lucide-react';
 
@@ -15,7 +15,7 @@ export default function Vault() {
     const queryClient = useQueryClient();
     
     // Tab and Modal states
-    const [activeTab, setActiveTab] = useState('pdfs');
+    const [activeTab, setActiveTab] = useState('documents');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState(null);
 
@@ -26,17 +26,17 @@ export default function Vault() {
     const [filterFavorite, setFilterFavorite] = useState('');
 
     // Queries
-    const pdfFilters = {};
-    if (filterCategory) pdfFilters.category = filterCategory;
-    if (filterTags.length > 0) pdfFilters.tags = filterTags.join(',');
-    if (filterFavorite) pdfFilters.is_favorite = filterFavorite;
+    const documentFilters = {};
+    if (filterCategory) documentFilters.category = filterCategory;
+    if (filterTags.length > 0) documentFilters.tags = filterTags.join(',');
+    if (filterFavorite) documentFilters.is_favorite = filterFavorite;
 
-    const resourceFilters = { ...pdfFilters };
+    const resourceFilters = { ...documentFilters };
     if (filterType) resourceFilters.type = filterType;
 
-    const { data: pdfs, isLoading: pdfsLoading } = useQuery({
-        queryKey: ['pdfs', pdfFilters],
-        queryFn: () => fetchPDFs(pdfFilters),
+    const { data: documents, isLoading: documentsLoading } = useQuery({
+        queryKey: ['documents', documentFilters],
+        queryFn: () => fetchDocuments(documentFilters),
     });
 
     const { data: resources, isLoading: resourcesLoading } = useQuery({
@@ -49,16 +49,16 @@ export default function Vault() {
 
     // Mutations
     const uploadMutation = useMutation({
-        mutationFn: uploadPDF,
-        onSuccess: () => { queryClient.invalidateQueries(['pdfs']); setIsModalOpen(false); setEditingItem(null); },
+        mutationFn: uploadDocument,
+        onSuccess: () => { queryClient.invalidateQueries(['documents']); setIsModalOpen(false); setEditingItem(null); },
     });
-    const updatePDFMutation = useMutation({
-        mutationFn: updatePDF,
-        onSuccess: () => { queryClient.invalidateQueries(['pdfs']); setIsModalOpen(false); setEditingItem(null); },
+    const updateDocumentMutation = useMutation({
+        mutationFn: updateDocument,
+        onSuccess: () => { queryClient.invalidateQueries(['documents']); setIsModalOpen(false); setEditingItem(null); },
     });
-    const deletePDFMutation = useMutation({
-        mutationFn: deletePDF,
-        onSuccess: () => queryClient.invalidateQueries(['pdfs']),
+    const deleteDocumentMutation = useMutation({
+        mutationFn: deleteDocument,
+        onSuccess: () => queryClient.invalidateQueries(['documents']),
     });
 
     const createResourceMutation = useMutation({
@@ -103,19 +103,19 @@ export default function Vault() {
                     onClick={handleOpenCreateModal} 
                     icon={<Plus size={18} />}
                 >
-                    {activeTab === 'pdfs' ? 'Upload PDF' : 'Add Resource'}
+                    {activeTab === 'documents' ? 'Upload Document' : 'Add Resource'}
                 </Button>
             </div>
 
             {/* Tabs */}
             <div className="flex border-b border-gray-800 mb-6">
                 <button
-                    onClick={() => { setActiveTab('pdfs'); setFilterType(''); }}
+                    onClick={() => { setActiveTab('documents'); setFilterType(''); }}
                     className={`flex items-center gap-2 px-6 py-3 text-sm font-medium transition-colors border-b-2 ${
-                        activeTab === 'pdfs' ? 'border-purple-500 text-purple-400' : 'border-transparent text-gray-400 hover:text-gray-200'
+                        activeTab === 'documents' ? 'border-purple-500 text-purple-400' : 'border-transparent text-gray-400 hover:text-gray-200'
                     }`}
                 >
-                    <FileText size={16} /> PDFs
+                    <FileText size={16} /> Documents
                 </button>
                 <button
                     onClick={() => setActiveTab('resources')}
@@ -188,24 +188,24 @@ export default function Vault() {
 
             {/* Content Area */}
             <div className="flex-1 overflow-y-auto">
-                {activeTab === 'pdfs' ? (
-                    pdfsLoading ? <p className="text-gray-400">Loading PDFs...</p> :
-                    pdfs?.length === 0 ? (
+                {activeTab === 'documents' ? (
+                    documentsLoading ? <p className="text-gray-400">Loading Documents...</p> :
+                    documents?.length === 0 ? (
                         <EmptyState 
                             icon={<FileText size={32} />} 
-                            title="No PDFs Uploaded" 
-                            description="Upload research papers, assignments, or study materials to your vault."
-                            action={<Button onClick={handleOpenCreateModal}>Upload PDF</Button>}
+                            title="No Documents Uploaded" 
+                            description="Upload research papers, assignments, images, or study materials to your vault."
+                            action={<Button onClick={handleOpenCreateModal}>Upload Document</Button>}
                         />
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {pdfs?.map(pdf => (
+                            {documents?.map(doc => (
                                 <DocumentCard 
-                                    key={pdf.id}
-                                    document={pdf}
+                                    key={doc.id}
+                                    document={doc}
                                     onEdit={handleEditClick}
-                                    onToggleFavorite={(doc) => updatePDFMutation.mutate({ id: doc.id, pdfData: { is_favorite: !doc.is_favorite }})}
-                                    onDelete={(id) => { if (window.confirm('Delete this PDF?')) deletePDFMutation.mutate(id); }}
+                                    onToggleFavorite={(d) => updateDocumentMutation.mutate({ id: d.id, documentData: { is_favorite: !d.is_favorite }})}
+                                    onDelete={(id) => { if (window.confirm('Delete this Document?')) deleteDocumentMutation.mutate(id); }}
                                 />
                             ))}
                         </div>
@@ -243,9 +243,9 @@ export default function Vault() {
                 editingItem={editingItem}
                 categories={categories}
                 tags={tags}
-                isPending={uploadMutation.isPending || updatePDFMutation.isPending || createResourceMutation.isPending || updateResourceMutation.isPending}
-                onSubmitPDF={(formData) => {
-                    if (editingItem) updatePDFMutation.mutate({ id: editingItem.id, pdfData: formData });
+                isPending={uploadMutation.isPending || updateDocumentMutation.isPending || createResourceMutation.isPending || updateResourceMutation.isPending}
+                onSubmitDocument={(formData) => {
+                    if (editingItem) updateDocumentMutation.mutate({ id: editingItem.id, documentData: formData });
                     else uploadMutation.mutate(formData);
                 }}
                 onSubmitResource={(data) => {

@@ -1,9 +1,9 @@
 from django.contrib import admin
-from .models import PDF, Resource
+from .models import Document, Resource
 
 
-@admin.register(PDF)
-class PDFAdmin(admin.ModelAdmin):
+@admin.register(Document)
+class DocumentAdmin(admin.ModelAdmin):
     list_display = ('title', 'user', 'original_filename', 'file_size', 'category', 'is_favorite', 'created_at')
     list_filter = ('is_favorite', 'user', 'category')
     search_fields = ('title', 'description', 'original_filename')

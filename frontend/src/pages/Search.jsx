@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Search as SearchIcon, FileText, Link2, StickyNote, ArrowUpRight } from 'lucide-react';
+import { Search as SearchIcon, FileText, Link2, StickyNote, ArrowUpRight, Image as ImageIcon } from 'lucide-react';
 import { fetchSearchResults } from '../api/search';
 import { useNavigate } from 'react-router-dom';
 
@@ -23,9 +23,12 @@ export default function Search() {
         enabled: debouncedTerm.trim().length > 0,
     });
 
-    const getIcon = (type) => {
+    const getIcon = (type, result) => {
         if (type === 'note') return <StickyNote size={20} color="#60A5FA" />;
-        if (type === 'pdf') return <FileText size={20} color="#F87171" />;
+        if (type === 'document') {
+            const isImage = result?.url?.match(/\.(jpeg|jpg|png|webp)$/i);
+            return isImage ? <ImageIcon size={20} color="#F472B6" /> : <FileText size={20} color="#F87171" />;
+        }
         if (type === 'resource') return <Link2 size={20} color="#34D399" />;
         return <SearchIcon size={20} />;
     };
@@ -33,7 +36,7 @@ export default function Search() {
     const handleResultClick = (result) => {
         if (result.type === 'note') {
             navigate(`/notes/${result.id}`);
-        } else if (result.type === 'pdf') {
+        } else if (result.type === 'document') {
             if (result.url) {
                 // If it's a full URL, use it, otherwise prepend backend URL
                 const fullUrl = result.url.startsWith('http') ? result.url : `http://127.0.0.1:8000${result.url}`;
@@ -98,7 +101,7 @@ export default function Search() {
                         >
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                    {getIcon(result.type)}
+                                    {getIcon(result.type, result)}
                                     <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '500', color: 'white' }}>
                                         {result.title}
                                     </h3>

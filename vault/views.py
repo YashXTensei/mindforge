@@ -1,12 +1,12 @@
 from rest_framework import viewsets, filters
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
-from .models import PDF, Resource
-from .serializers import PDFSerializer, ResourceSerializer
+from .models import Document, Resource
+from .serializers import DocumentSerializer, ResourceSerializer
 
 
-class PDFViewSet(viewsets.ModelViewSet):
-    serializer_class = PDFSerializer
+class DocumentViewSet(viewsets.ModelViewSet):
+    serializer_class = DocumentSerializer
     permission_classes = [IsAuthenticated]
     # File upload ke liye MultiPartParser zaroori hai
     parser_classes = [MultiPartParser, FormParser, JSONParser]
@@ -17,7 +17,7 @@ class PDFViewSet(viewsets.ModelViewSet):
     ordering = ['-updated_at']
 
     def get_queryset(self):
-        queryset = PDF.objects.filter(user=self.request.user)
+        queryset = Document.objects.filter(user=self.request.user)
 
         # Filter by category: /api/vault/pdfs/?category=1
         category_id = self.request.query_params.get('category')

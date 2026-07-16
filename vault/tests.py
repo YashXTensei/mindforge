@@ -1,42 +1,42 @@
 import pytest
 from django.urls import reverse
 from django.core.files.uploadedfile import SimpleUploadedFile
-from vault.models import PDF, Resource
+from vault.models import Document, Resource
 
 @pytest.mark.django_db
 class TestVaultAPI:
 
-    def test_pdf_upload_success(self, api_client1, user1):
+    def test_document_upload_success(self, api_client1, user1):
         """
-        Why: Tests the file upload endpoint to ensure a valid PDF is accepted, saved, and attached to the user.
+        Why: Tests the file upload endpoint to ensure a valid Document is accepted, saved, and attached to the user.
         Real Bug Caught: The `parser_classes` missing `MultiPartParser` in DRF, causing file uploads to silently fail or return 400 Bad Request because the server can't read `FormData`.
         Production Importance: Core feature. If users can't upload documents, the Vault module is useless.
         """
-        url = reverse('pdf-list')
+        url = reverse('document-list')
         # Create a dummy PDF file in memory
         dummy_file = SimpleUploadedFile("test_doc.pdf", b"file_content", content_type="application/pdf")
         
         response = api_client1.post(url, {'file': dummy_file, 'title': 'My Document'}, format='multipart')
         
         assert response.status_code == 201
-        pdf = PDF.objects.first()
-        assert pdf.title == 'My Document'
-        assert pdf.user == user1
-        assert 'test_doc' in pdf.file.name  # Django might append random chars, so check for substring
+        doc = Document.objects.first()
+        assert doc.title == 'My Document'
+        assert doc.user == user1
+        assert doc.original_filename == 'test_doc.pdf'
 
-    def test_pdf_reject_non_pdf(self, api_client1, user1):
+    def test_document_reject_invalid_extension(self, api_client1, user1):
         """
         Why: Ensures the `FileExtensionValidator` on the model actually works.
         Real Bug Caught: A malicious user or confused user uploading a `.exe` or `.py` file, which could be a security risk (Remote Code Execution) or break the frontend PDF viewer.
         Production Importance: Security and Data Integrity. We must strictly enforce that the Vault only accepts safe, expected file types.
         """
-        url = reverse('pdf-list')
+        url = reverse('document-list')
         dummy_file = SimpleUploadedFile("test_script.py", b"print('hack')", content_type="text/x-python")
         
         response = api_client1.post(url, {'file': dummy_file, 'title': 'Malicious'}, format='multipart')
         
         assert response.status_code == 400  # Should be rejected
-        assert PDF.objects.count() == 0
+        assert Document.objects.count() == 0
 
     def test_resource_crud_and_ownership(self, api_client1, api_client2, user1, user2):
         """
