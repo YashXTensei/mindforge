@@ -41,29 +41,19 @@ def document_upload_path(instance, filename):
     ext = filename.split('.')[-1]
     filename = f"{uuid.uuid4()}.{ext}"
     return os.path.join(f"vault/{instance.user.id}/documents", filename)
-class Document(models.Model):  # Changed from PDF
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='documents')
-    title = models.CharField(max_length=255)
+
+class Document(BaseKnowledge):
     original_filename = models.CharField(max_length=255)
     file = models.FileField(
         upload_to=document_upload_path,
-        validators=[FileExtensionValidator(allowed_extensions=['pdf', 'png', 'jpg', 'jpeg', 'webp'])] # Image support add kar diya
+        validators=[FileExtensionValidator(allowed_extensions=['pdf', 'png', 'jpg', 'jpeg', 'webp'])]
     )
-    description = models.TextField(blank=True, null=True)
-    category = models.ForeignKey('taxonomy.Category', on_delete=models.SET_NULL, null=True, blank=True, related_name='documents')
-    tags = models.ManyToManyField('taxonomy.Tag', blank=True, related_name='documents')
     
     file_size = models.BigIntegerField(null=True, blank=True)
-    page_count = models.IntegerField(null=True, blank=True) # Yeh image ke case mein null rahega
-    is_favorite = models.BooleanField(default=False)
+    page_count = models.IntegerField(null=True, blank=True)
     
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    class Meta:
-        ordering = ['-created_at']
-    def __str__(self):
-        return self.title
-
+    class Meta(BaseKnowledge.Meta):
+        pass
 
 class Resource(BaseKnowledge):
     """External bookmarks/references — articles, videos, repos, docs."""
