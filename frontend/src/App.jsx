@@ -9,9 +9,12 @@ import Vault from './pages/Vault';
 import Search from './pages/Search';
 import NoteView from './pages/NoteView';
 
+import { Toaster } from 'react-hot-toast';
+
 function App() {
     return (
         <BrowserRouter>
+            <Toaster position="top-right" />
             <Routes>
                 {/* Public Routes (Bina Layout ke) */}
                 <Route path="/" element={<Navigate to="/login" replace />} />

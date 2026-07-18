@@ -5,7 +5,7 @@ import React from 'react';
 
 export function EmptyState({ icon, title, description, action }) {
   return (
-    <div className="flex flex-col items-center justify-center p-8 text-center min-h-[300px] border border-dashed border-gray-700 rounded-xl bg-gray-900/50">
+    <div className="flex flex-col items-center justify-center p-12 text-center min-h-[300px] border-2 border-dashed border-gray-700/50 rounded-xl bg-gray-800/20 transition-colors">
       
       {/* Icon Area */}
       {icon && (

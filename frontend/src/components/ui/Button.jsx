@@ -10,7 +10,7 @@ export const Button = React.forwardRef(({
   className, 
   ...rest 
 }, ref) => {
-  const baseStyles = "inline-flex items-center justify-center rounded-md font-medium transition-colors focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed gap-2";
+  const baseStyles = "inline-flex items-center justify-center rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 disabled:opacity-50 disabled:cursor-not-allowed gap-2";
   
   const variants = {
     primary: "bg-purple-600 text-white hover:bg-purple-700",

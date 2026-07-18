@@ -5,6 +5,7 @@ import { Plus, X, Pencil, Trash2, Filter, ChevronDown } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 
 export default function Notes() {
     const queryClient = useQueryClient(); 
@@ -131,9 +132,11 @@ export default function Notes() {
     });
 
     const handleDeleteClick = (id) => {
-        // Confirmation alert box
         if (window.confirm("Are you sure you want to delete this note?")) {
-            deleteMutation.mutate(id);
+            toast.promise(
+                deleteMutation.mutateAsync(id),
+                { loading: 'Deleting...', success: 'Note deleted!', error: 'Failed to delete note.' }
+            );
         }
     };
 
@@ -170,9 +173,15 @@ export default function Notes() {
         };
 
         if (editingId) {
-            updateMutation.mutate({ id: editingId, noteData });
+            toast.promise(
+                updateMutation.mutateAsync({ id: editingId, noteData }),
+                { loading: 'Updating...', success: 'Note updated!', error: 'Failed to update note.' }
+            );
         } else {
-            createMutation.mutate(noteData);
+            toast.promise(
+                createMutation.mutateAsync(noteData),
+                { loading: 'Saving...', success: 'Note created!', error: 'Failed to create note.' }
+            );
         }
     };
 
@@ -253,7 +262,10 @@ export default function Notes() {
                                     onClick={() => {
                                         const catName = categories?.find(c => c.id == formCategory)?.name;
                                         if (window.confirm(`Delete category "${catName}"? It will be removed from all associated notes.`)) {
-                                            deleteCategoryMutation.mutate(formCategory);
+                                            toast.promise(
+                                                deleteCategoryMutation.mutateAsync(formCategory),
+                                                { loading: 'Deleting category...', success: 'Category deleted!', error: 'Failed to delete.' }
+                                            );
                                         }
                                     }}
                                     title="Delete this category"
@@ -277,7 +289,10 @@ export default function Notes() {
                                 onKeyDown={(e) => {
                                     if (e.key === 'Enter' && newCategoryName.trim()) {
                                         e.preventDefault();
-                                        createCategoryMutation.mutate({ name: newCategoryName.trim() });
+                                        toast.promise(
+                                            createCategoryMutation.mutateAsync({ name: newCategoryName.trim() }),
+                                            { loading: 'Adding...', success: 'Category added!', error: 'Failed to add.' }
+                                        );
                                     }
                                 }}
                                 style={{
@@ -289,7 +304,10 @@ export default function Notes() {
                                 type="button"
                                 onClick={() => {
                                     if (newCategoryName.trim()) {
-                                        createCategoryMutation.mutate({ name: newCategoryName.trim() });
+                                        toast.promise(
+                                            createCategoryMutation.mutateAsync({ name: newCategoryName.trim() }),
+                                            { loading: 'Adding...', success: 'Category added!', error: 'Failed to add.' }
+                                        );
                                     }
                                 }}
                                 disabled={!newCategoryName.trim() || createCategoryMutation.isPending}
@@ -340,7 +358,10 @@ export default function Notes() {
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 if (window.confirm(`Delete tag "${tag.name}"? It will be removed from all associated notes.`)) {
-                                                    deleteTagMutation.mutate(tag.id);
+                                                    toast.promise(
+                                                        deleteTagMutation.mutateAsync(tag.id),
+                                                        { loading: 'Deleting tag...', success: 'Tag deleted!', error: 'Failed to delete.' }
+                                                    );
                                                 }
                                             }}
                                             title={`Delete tag "${tag.name}"`}
@@ -373,7 +394,10 @@ export default function Notes() {
                                 onKeyDown={(e) => {
                                     if (e.key === 'Enter' && newTagName.trim()) {
                                         e.preventDefault();
-                                        createTagMutation.mutate({ name: newTagName.trim() });
+                                        toast.promise(
+                                            createTagMutation.mutateAsync({ name: newTagName.trim() }),
+                                            { loading: 'Adding...', success: 'Tag added!', error: 'Failed to add.' }
+                                        );
                                     }
                                 }}
                                 style={{
@@ -385,7 +409,10 @@ export default function Notes() {
                                 type="button"
                                 onClick={() => {
                                     if (newTagName.trim()) {
-                                        createTagMutation.mutate({ name: newTagName.trim() });
+                                        toast.promise(
+                                            createTagMutation.mutateAsync({ name: newTagName.trim() }),
+                                            { loading: 'Adding...', success: 'Tag added!', error: 'Failed to add.' }
+                                        );
                                     }
                                 }}
                                 disabled={!newTagName.trim() || createTagMutation.isPending}

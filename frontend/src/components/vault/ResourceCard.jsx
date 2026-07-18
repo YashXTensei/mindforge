@@ -9,7 +9,7 @@ export function ResourceCard({
   onDelete 
 }) {
   return (
-    <div className="flex items-center gap-4 p-4 bg-gray-800/50 border border-gray-700 rounded-lg hover:bg-gray-800 transition-colors group">
+    <div className="relative flex items-center gap-4 p-4 bg-gray-800/50 border border-gray-700 rounded-lg hover:bg-gray-800 transition-colors group">
       
       {/* Icon Placeholder */}
       <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-blue-500/10 text-blue-400">
@@ -20,7 +20,14 @@ export function ResourceCard({
       <div className="flex-1 min-w-0">
         <h3 className="text-base font-medium text-gray-100 truncate">
           {resource.is_favorite && <span className="mr-1">⭐</span>}
-          {resource.title}
+          <a
+            href={resource.url} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="hover:text-purple-400 transition-colors before:absolute before:inset-0"
+          >
+            {resource.title}
+          </a>
         </h3>
         
         <div className="flex items-center gap-3 mt-1 text-sm text-gray-400">
@@ -45,7 +52,7 @@ export function ResourceCard({
       </div>
 
       {/* Actions */}
-      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="relative z-10 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
         <button onClick={() => onEdit(resource)} className="p-2 text-gray-400 hover:text-white rounded-md hover:bg-gray-700">
           <Pencil size={16} />
         </button>

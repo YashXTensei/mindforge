@@ -32,7 +32,6 @@ class BaseKnowledge(models.Model):
     class Meta:
         abstract = True  # <-- No table created for this model!
         ordering = ['-updated_at']
-
     def __str__(self):
         return self.title
 

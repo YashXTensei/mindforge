@@ -20,12 +20,20 @@ export function DocumentCard({
   const isImage = document.file?.match(/\.(jpeg|jpg|png|webp)$/i);
 
   return (
-    <div className="flex items-center gap-4 p-4 bg-gray-800/50 border border-gray-700 rounded-lg hover:bg-gray-800 transition-colors group">
+    <div className="relative flex items-center gap-4 p-4 bg-gray-800/50 border border-gray-700 rounded-lg hover:bg-gray-800 transition-colors group">
       
-      {/* Icon Placeholder */}
-      <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-lg ${isImage ? 'bg-pink-500/10 text-pink-400' : 'bg-purple-500/10 text-purple-400'}`}>
-        {isImage ? <ImageIcon size={24} /> : <FileText size={24} />}
-      </div>
+      {/* Icon Placeholder or Image Thumbnail */}
+      {isImage ? (
+        <img 
+          src={document.file} 
+          alt={document.title} 
+          className="h-12 w-12 shrink-0 object-cover rounded-lg border border-gray-700" 
+        />
+      ) : (
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-purple-500/10 text-purple-400">
+          <FileText size={24} />
+        </div>
+      )}
 
       {/* Info Section */}
       <div className="flex-1 min-w-0">
@@ -35,7 +43,7 @@ export function DocumentCard({
             href={document.file} 
             target="_blank" 
             rel="noopener noreferrer"
-            className="hover:text-purple-400 transition-colors"
+            className="hover:text-purple-400 transition-colors before:absolute before:inset-0"
           >
             {document.title}
           </a>
@@ -62,7 +70,7 @@ export function DocumentCard({
       </div>
 
       {/* Actions (Visible on hover using Tailwind's 'group-hover') */}
-      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="relative z-10 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
         <button onClick={() => onEdit(document)} className="p-2 text-gray-400 hover:text-white rounded-md hover:bg-gray-700">
           <Pencil size={16} />
         </button>

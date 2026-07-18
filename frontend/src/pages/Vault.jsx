@@ -10,6 +10,9 @@ import { UploadModal } from '../components/vault/UploadModal';
 import { Button } from '../components/ui/Button';
 import { EmptyState } from '../components/ui/EmptyState';
 import { Badge } from '../components/ui/Badge';
+import { CardSkeleton } from '../components/ui/Skeleton';
+
+import toast from 'react-hot-toast';
 
 export default function Vault() {
     const queryClient = useQueryClient();
@@ -132,7 +135,7 @@ export default function Vault() {
                 <select 
                     value={filterCategory} 
                     onChange={(e) => setFilterCategory(e.target.value)}
-                    className="h-9 px-3 rounded-md bg-gray-900 border border-gray-700 text-sm text-gray-200 focus:outline-none focus:border-purple-500"
+                    className="h-9 px-3 rounded-md bg-gray-900 border border-gray-700 text-sm text-gray-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900"
                 >
                     <option value="">All Categories</option>
                     {categories?.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
@@ -142,7 +145,7 @@ export default function Vault() {
                     <select 
                         value={filterType} 
                         onChange={(e) => setFilterType(e.target.value)}
-                        className="h-9 px-3 rounded-md bg-gray-900 border border-gray-700 text-sm text-gray-200 focus:outline-none focus:border-purple-500"
+                        className="h-9 px-3 rounded-md bg-gray-900 border border-gray-700 text-sm text-gray-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900"
                     >
                         <option value="">All Types</option>
                         <option value="article">Article</option>
@@ -157,7 +160,7 @@ export default function Vault() {
                 <select 
                     value={filterFavorite} 
                     onChange={(e) => setFilterFavorite(e.target.value)}
-                    className="h-9 px-3 rounded-md bg-gray-900 border border-gray-700 text-sm text-gray-200 focus:outline-none focus:border-purple-500"
+                    className="h-9 px-3 rounded-md bg-gray-900 border border-gray-700 text-sm text-gray-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900"
                 >
                     <option value=""> All </option>
                     <option value="true">⭐ Favorites</option>
@@ -189,7 +192,11 @@ export default function Vault() {
             {/* Content Area */}
             <div className="flex-1 overflow-y-auto">
                 {activeTab === 'documents' ? (
-                    documentsLoading ? <p className="text-gray-400">Loading Documents...</p> :
+                    documentsLoading ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {[1, 2, 3, 4].map(i => <CardSkeleton key={i} />)}
+                        </div>
+                    ) :
                     documents?.length === 0 ? (
                         <EmptyState 
                             icon={<FileText size={32} />} 
@@ -205,13 +212,24 @@ export default function Vault() {
                                     document={doc}
                                     onEdit={handleEditClick}
                                     onToggleFavorite={(d) => updateDocumentMutation.mutate({ id: d.id, documentData: { is_favorite: !d.is_favorite }})}
-                                    onDelete={(id) => { if (window.confirm('Delete this Document?')) deleteDocumentMutation.mutate(id); }}
+                                    onDelete={(id) => { 
+                                        if (window.confirm('Delete this Document?')) {
+                                            toast.promise(
+                                                deleteDocumentMutation.mutateAsync(id),
+                                                { loading: 'Deleting document...', success: 'Document deleted!', error: 'Failed to delete.' }
+                                            );
+                                        } 
+                                    }}
                                 />
                             ))}
                         </div>
                     )
                 ) : (
-                    resourcesLoading ? <p className="text-gray-400">Loading Resources...</p> :
+                    resourcesLoading ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {[1, 2, 3, 4].map(i => <CardSkeleton key={i} />)}
+                        </div>
+                    ) :
                     resources?.length === 0 ? (
                         <EmptyState 
                             icon={<Link2 size={32} />} 
@@ -227,7 +245,14 @@ export default function Vault() {
                                     resource={res}
                                     onEdit={handleEditClick}
                                     onToggleFavorite={(r) => updateResourceMutation.mutate({ id: r.id, resourceData: { is_favorite: !r.is_favorite }})}
-                                    onDelete={(id) => { if (window.confirm('Delete this resource?')) deleteResourceMutation.mutate(id); }}
+                                    onDelete={(id) => { 
+                                        if (window.confirm('Delete this resource?')) {
+                                            toast.promise(
+                                                deleteResourceMutation.mutateAsync(id),
+                                                { loading: 'Deleting resource...', success: 'Resource deleted!', error: 'Failed to delete.' }
+                                            );
+                                        } 
+                                    }}
                                 />
                             ))}
                         </div>
@@ -245,12 +270,30 @@ export default function Vault() {
                 tags={tags}
                 isPending={uploadMutation.isPending || updateDocumentMutation.isPending || createResourceMutation.isPending || updateResourceMutation.isPending}
                 onSubmitDocument={(formData) => {
-                    if (editingItem) updateDocumentMutation.mutate({ id: editingItem.id, documentData: formData });
-                    else uploadMutation.mutate(formData);
+                    if (editingItem) {
+                        toast.promise(
+                            updateDocumentMutation.mutateAsync({ id: editingItem.id, documentData: formData }),
+                            { loading: 'Updating document...', success: 'Document updated!', error: 'Failed to update document.' }
+                        );
+                    } else {
+                        toast.promise(
+                            uploadMutation.mutateAsync(formData),
+                            { loading: 'Uploading document...', success: 'Document uploaded successfully!', error: 'Failed to upload document.' }
+                        );
+                    }
                 }}
                 onSubmitResource={(data) => {
-                    if (editingItem) updateResourceMutation.mutate({ id: editingItem.id, resourceData: data });
-                    else createResourceMutation.mutate(data);
+                    if (editingItem) {
+                        toast.promise(
+                            updateResourceMutation.mutateAsync({ id: editingItem.id, resourceData: data }),
+                            { loading: 'Updating resource...', success: 'Resource updated!', error: 'Failed to update resource.' }
+                        );
+                    } else {
+                        toast.promise(
+                            createResourceMutation.mutateAsync(data),
+                            { loading: 'Saving resource...', success: 'Resource saved successfully!', error: 'Failed to save resource.' }
+                        );
+                    }
                 }}
                 createCategoryMutation={createCategoryMutation}
                 createTagMutation={createTagMutation}
