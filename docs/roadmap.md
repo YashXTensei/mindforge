@@ -85,7 +85,7 @@ Goals, Tasks, Priorities, Deadlines — deferred to Phase 6 (AI Actions).
 
 ---
 
-✅done {date : 8th july 2026}
+✅done phase 1 {date : 8th july 2026}
 
 # Phase 2 — Knowledge Vault
 
@@ -122,7 +122,7 @@ Turn MindForge from a notes app into a knowledge repository.
 
 ✅done {date : 14th july 2026}
 
-💖polishing phase 2 {15th july 2026 to xxth july 2026} 
+💖polishing of phase 2 {15th july 2026 to 18th july 2026} 
 
 # Phase 3 — RAG Engine ⭐
 
