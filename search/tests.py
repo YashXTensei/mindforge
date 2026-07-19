@@ -1,7 +1,7 @@
 import pytest
 from django.urls import reverse
 from notes.models import Note
-from vault.models import PDF, Resource
+from vault.models import Document, Resource 
 from taxonomy.models import Category, Tag
 
 @pytest.mark.django_db

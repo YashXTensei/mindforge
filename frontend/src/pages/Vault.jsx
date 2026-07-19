@@ -205,7 +205,7 @@ export default function Vault() {
                             action={<Button onClick={handleOpenCreateModal}>Upload Document</Button>}
                         />
                     ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                             {documents?.map(doc => (
                                 <DocumentCard 
                                     key={doc.id}
@@ -238,7 +238,7 @@ export default function Vault() {
                             action={<Button onClick={handleOpenCreateModal}>Add Resource</Button>}
                         />
                     ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                             {resources?.map(res => (
                                 <ResourceCard 
                                     key={res.id}
