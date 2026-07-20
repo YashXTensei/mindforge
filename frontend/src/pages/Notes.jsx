@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { fetchNotes, createNote, updateNote, deleteNote, fetchCategories, fetchTags, createCategory, createTag, deleteCategory, deleteTag } from '../api/notes';
 import { Plus, X, Trash2 } from 'lucide-react';
@@ -7,12 +7,15 @@ import toast from 'react-hot-toast';
 import { NoteCard } from '../components/notes/NoteCard';
 import { FilterBar } from '../components/notes/FilterBar';
 import { NoteForm } from '../components/notes/NoteForm';
+import { DetailPanel } from '../components/ui/DetailPanel';
+import { NoteDetail } from '../components/notes/NoteDetail';
 
 export default function Notes() {
     const queryClient = useQueryClient(); 
     
     // UI States
     const [showForm, setShowForm] = useState(false);
+    const [selectedNote, setSelectedNote] = useState(null);
     
     // Form States
     const [editingNote, setEditingNote] = useState(null); 
@@ -100,7 +103,6 @@ export default function Notes() {
         onSuccess: (_, deletedId) => {
             queryClient.invalidateQueries(['tags']);
             queryClient.invalidateQueries(['notes']);
-            setFormTags(prev => prev.filter(id => id !== deletedId)); // Agar selected tha toh hatao
             setSelectedTags(prev => prev.filter(id => id !== deletedId)); // Filter se bhi hatao
         }
     });
@@ -149,97 +151,120 @@ export default function Notes() {
     if (isError) return <div className="text-red-400">Error fetching notes! ❌</div>;
 
     return (
-        <div>
-            <div className="flex justify-between items-center mb-8">
-                <h1 className="text-white m-0">Notes</h1>
-                <button 
-                    onClick={() => {
-                        if (showForm) resetForm();
-                        else setShowForm(true);
-                    }}
-                    className={`flex items-center gap-2 border-none px-4 py-2.5 rounded-md cursor-pointer text-white transition-colors ${showForm ? 'bg-gray-800 hover:bg-gray-700' : 'bg-accent hover:bg-accent-dark'}`}
-                >
-                    {showForm ? <X size={18} /> : <Plus size={18} />}
-                    {showForm ? 'Cancel' : 'New Note'}
-                </button>
-            </div>
+        <div className="flex h-full gap-0 animate-fade-in">
+            {/* Left: Main Notes Area */}
+            <div className={`flex-1 min-w-0 overflow-y-auto ${selectedNote ? 'pr-0' : ''}`}>
+                <div className="flex justify-between items-center mb-8">
+                    <h1 className="text-white m-0">Notes</h1>
+                    <button 
+                        onClick={() => {
+                            if (showForm) resetForm();
+                            else setShowForm(true);
+                        }}
+                        className={`flex items-center gap-2 border-none px-4 py-2.5 rounded-md cursor-pointer text-white transition-colors ${showForm ? 'bg-gray-800 hover:bg-gray-700' : 'bg-accent hover:bg-accent-dark'}`}
+                    >
+                        {showForm ? <X size={18} /> : <Plus size={18} />}
+                        {showForm ? 'Cancel' : 'New Note'}
+                    </button>
+                </div>
 
-            {/* Create / Edit Form — filters se UPAR */}
-            {showForm && (
-                <NoteForm 
-                    key={editingNote ? editingNote.id : 'new'}
-                    initialData={editingNote}
-                    isEditing={!!editingNote}
-                    onSubmit={handleFormSubmit}
-                    onCancel={resetForm}
-                    isPending={createMutation.isPending || updateMutation.isPending}
+                {/* Create / Edit Form — filters se UPAR */}
+                {showForm && (
+                    <NoteForm 
+                        key={editingNote ? editingNote.id : 'new'}
+                        initialData={editingNote}
+                        isEditing={!!editingNote}
+                        onSubmit={handleFormSubmit}
+                        onCancel={resetForm}
+                        isPending={createMutation.isPending || updateMutation.isPending}
+                        categories={categories}
+                        tags={tags}
+                        onCreateCategory={(name) => {
+                            toast.promise(
+                                createCategoryMutation.mutateAsync({ name }),
+                                { loading: 'Adding...', success: 'Category added!', error: 'Failed to add.' }
+                            );
+                        }}
+                        onDeleteCategory={(id) => {
+                            toast.promise(
+                                deleteCategoryMutation.mutateAsync(id),
+                                { loading: 'Deleting category...', success: 'Category deleted!', error: 'Failed to delete.' }
+                            );
+                        }}
+                        isCreatingCategory={createCategoryMutation.isPending}
+                        onCreateTag={(name) => {
+                            toast.promise(
+                                createTagMutation.mutateAsync({ name }),
+                                { loading: 'Adding...', success: 'Tag added!', error: 'Failed to add.' }
+                            );
+                        }}
+                        onDeleteTag={(id) => {
+                            toast.promise(
+                                deleteTagMutation.mutateAsync(id),
+                                { loading: 'Deleting tag...', success: 'Tag deleted!', error: 'Failed to delete.' }
+                            );
+                        }}
+                        isCreatingTag={createTagMutation.isPending}
+                        newlyCreatedCategory={newlyCreatedCategory}
+                        newlyCreatedTag={newlyCreatedTag}
+                    />
+                )}
+
+                {/* Filter Bar — form ke NEECHE */}
+                <FilterBar 
                     categories={categories}
                     tags={tags}
-                    onCreateCategory={(name) => {
-                        toast.promise(
-                            createCategoryMutation.mutateAsync({ name }),
-                            { loading: 'Adding...', success: 'Category added!', error: 'Failed to add.' }
-                        );
-                    }}
-                    onDeleteCategory={(id) => {
-                        toast.promise(
-                            deleteCategoryMutation.mutateAsync(id),
-                            { loading: 'Deleting category...', success: 'Category deleted!', error: 'Failed to delete.' }
-                        );
-                    }}
-                    isCreatingCategory={createCategoryMutation.isPending}
-                    onCreateTag={(name) => {
-                        toast.promise(
-                            createTagMutation.mutateAsync({ name }),
-                            { loading: 'Adding...', success: 'Tag added!', error: 'Failed to add.' }
-                        );
-                    }}
-                    onDeleteTag={(id) => {
-                        toast.promise(
-                            deleteTagMutation.mutateAsync(id),
-                            { loading: 'Deleting tag...', success: 'Tag deleted!', error: 'Failed to delete.' }
-                        );
-                    }}
-                    isCreatingTag={createTagMutation.isPending}
-                    newlyCreatedCategory={newlyCreatedCategory}
-                    newlyCreatedTag={newlyCreatedTag}
+                    selectedCategory={selectedCategory}
+                    selectedTags={selectedTags}
+                    onCategoryChange={setSelectedCategory}
+                    onTagsChange={setSelectedTags}
+                    onClear={() => { setSelectedCategory(''); setSelectedTags([]); }}
+                    isFetching={isFetching}
                 />
-            )}
 
-            {/* Filter Bar — form ke NEECHE */}
-            <FilterBar 
-                categories={categories}
-                tags={tags}
-                selectedCategory={selectedCategory}
-                selectedTags={selectedTags}
-                onCategoryChange={setSelectedCategory}
-                onTagsChange={setSelectedTags}
-                onClear={() => { setSelectedCategory(''); setSelectedTags([]); }}
-                isFetching={isFetching}
-            />
+                {/* Notes List */}
+                {notes?.length === 0 ? (
+                    <p className="text-gray-400">
+                        {(selectedCategory || selectedTags.length > 0)
+                            ? 'No notes found for this filter. Try changing or clearing the filters! 🔍'
+                            : 'No notes yet. Create your first note! ✍️'
+                        }
+                    </p>
+                ) : (
+                    <div className={`flex flex-col gap-4 ${!selectedNote ? 'max-w-4xl' : ''}`}>
+                        {notes?.map((note) => (
+                            <NoteCard 
+                                key={note.id}
+                                note={note}
+                                onEdit={handleEditClick}
+                                onDelete={handleDeleteClick}
+                                onNavigate={(id) => {
+                                    const clicked = notes.find(n => n.id === id);
+                                    setSelectedNote(prev => prev?.id === id ? null : clicked);
+                                }}
+                                isDeleting={deleteMutation.isPending}
+                                isSelected={selectedNote?.id === note.id}
+                            />
+                        ))}
+                    </div>
+                )}
+            </div>
 
-            {/* Notes List */}
-            {notes?.length === 0 ? (
-                <p className="text-gray-400">
-                    {(selectedCategory || selectedTags.length > 0)
-                        ? 'No notes found for this filter. Try changing or clearing the filters! 🔍'
-                        : 'No notes yet. Create your first note! ✍️'
-                    }
-                </p>
-            ) : (
-                <div className="flex flex-col gap-4">
-                    {notes?.map((note) => (
-                        <NoteCard 
-                            key={note.id}
-                            note={note}
-                            onEdit={handleEditClick}
-                            onDelete={handleDeleteClick}
-                            onNavigate={(id) => navigate(`/notes/${id}`)}
-                            isDeleting={deleteMutation.isPending}
-                        />
-                    ))}
-                </div>
-            )}
+            {/* Right: Detail Panel */}
+            <DetailPanel 
+                isOpen={!!selectedNote}
+                onClose={() => setSelectedNote(null)}
+                title={selectedNote?.title || ''}
+            >
+                <NoteDetail note={selectedNote} />
+                {/* View Full Note link */}
+                <button
+                    onClick={() => navigate(`/notes/${selectedNote?.id}`)}
+                    className="mt-6 w-full py-2.5 px-4 rounded-lg bg-accent/10 text-accent text-sm font-medium hover:bg-accent/20 transition-colors text-center"
+                >
+                    Open Full Note →
+                </button>
+            </DetailPanel>
         </div>
     );
 }

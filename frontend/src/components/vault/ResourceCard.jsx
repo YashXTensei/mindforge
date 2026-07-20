@@ -6,10 +6,15 @@ export function ResourceCard({
   resource, 
   onEdit, 
   onToggleFavorite, 
-  onDelete 
+  onDelete,
+  onSelect,
+  isSelected
 }) {
   return (
-    <div className="relative flex items-center gap-4 p-4 bg-gray-800/50 border border-gray-700 rounded-lg hover:bg-gray-800 transition-colors group">
+    <div 
+      onClick={onSelect}
+      className={`relative flex items-center gap-4 p-4 bg-gray-800/50 border rounded-lg hover:bg-gray-800 transition-colors group cursor-pointer ${isSelected ? 'border-purple-500 bg-purple-500/5 ring-1 ring-purple-500/20' : 'border-gray-700'}`}
+    >
       
       {/* Icon Placeholder */}
       <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-blue-500/10 text-blue-400">
@@ -24,7 +29,8 @@ export function ResourceCard({
             href={resource.url} 
             target="_blank" 
             rel="noopener noreferrer"
-            className="hover:text-purple-400 transition-colors before:absolute before:inset-0"
+            onClick={(e) => e.stopPropagation()}
+            className="hover:text-purple-400 transition-colors"
           >
             {resource.title}
           </a>

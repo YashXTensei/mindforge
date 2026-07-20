@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Search as SearchIcon, FileText, Link2, StickyNote, ArrowUpRight, Image as ImageIcon } from 'lucide-react';
+import { Search as SearchIcon, FileText, Link2, StickyNote, ArrowUpRight, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { fetchSearchResults } from '../api/search';
 import { useNavigate } from 'react-router-dom';
 
@@ -24,13 +24,20 @@ export default function Search() {
     });
 
     const getIcon = (type, result) => {
-        if (type === 'note') return <StickyNote size={20} color="#60A5FA" />;
+        if (type === 'note') return <StickyNote size={20} className="text-blue-400" />;
         if (type === 'document') {
             const isImage = result?.url?.match(/\.(jpeg|jpg|png|webp)$/i);
-            return isImage ? <ImageIcon size={20} color="#F472B6" /> : <FileText size={20} color="#F87171" />;
+            return isImage ? <ImageIcon size={20} className="text-pink-400" /> : <FileText size={20} className="text-red-400" />;
         }
-        if (type === 'resource') return <Link2 size={20} color="#34D399" />;
+        if (type === 'resource') return <Link2 size={20} className="text-emerald-400" />;
         return <SearchIcon size={20} />;
+    };
+
+    const getTypeBadgeColor = (type) => {
+        if (type === 'note') return 'bg-blue-500/15 text-blue-400 border-blue-500/20';
+        if (type === 'document') return 'bg-red-500/15 text-red-400 border-red-500/20';
+        if (type === 'resource') return 'bg-emerald-500/15 text-emerald-400 border-emerald-500/20';
+        return 'bg-gray-700 text-gray-300';
     };
 
     const handleResultClick = (result) => {
@@ -38,7 +45,6 @@ export default function Search() {
             navigate(`/notes/${result.id}`);
         } else if (result.type === 'document') {
             if (result.url) {
-                // If it's a full URL, use it, otherwise prepend backend URL
                 const fullUrl = result.url.startsWith('http') ? result.url : `http://127.0.0.1:8000${result.url}`;
                 window.open(fullUrl, '_blank');
             }
@@ -48,87 +54,96 @@ export default function Search() {
     };
 
     return (
-        <div style={{ padding: '40px', maxWidth: '800px', margin: '0 auto', color: '#e0e0e0' }}>
-            <h1 style={{ marginBottom: '30px', fontSize: '28px', color: 'white' }}>Global Search</h1>
+        <div className="max-w-3xl mx-auto text-gray-200 animate-fade-in">
+            {/* Header */}
+            <h1 className="text-2xl font-bold text-white mb-8">Global Search</h1>
             
-            <div style={{ marginBottom: '40px', display: 'flex', alignItems: 'center', backgroundColor: '#1E1E1E', borderRadius: '12px', padding: '15px 20px', border: '1px solid #333' }}>
-                <SearchIcon size={24} color="#A076F9" style={{ marginRight: '15px' }} />
+            {/* Search Input */}
+            <div className="mb-10 flex items-center bg-surface-card rounded-xl px-5 py-4 border border-border focus-within:border-accent focus-within:ring-1 focus-within:ring-accent/30 transition-all duration-200">
+                <SearchIcon size={22} className="text-accent mr-4 shrink-0" />
                 <input
                     type="text"
                     placeholder="Search across Notes, Vault, and Resources..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     autoFocus
-                    style={{
-                        flex: 1,
-                        background: 'transparent',
-                        border: 'none',
-                        color: 'white',
-                        fontSize: '18px',
-                        outline: 'none',
-                    }}
+                    className="flex-1 bg-transparent border-none text-white text-lg outline-none placeholder:text-gray-500"
                 />
+                {isLoading && <Loader2 size={20} className="text-accent animate-spin ml-3" />}
             </div>
 
-            {isLoading && <div style={{ textAlign: 'center', color: '#A076F9', fontSize: '16px' }}>Searching database...</div>}
-
-            {!isLoading && debouncedTerm && (!results || results.length === 0) && (
-                <div style={{ textAlign: 'center', color: '#aaa', padding: '40px', backgroundColor: '#111', borderRadius: '8px' }}>
-                    <SearchIcon size={40} color="#333" style={{ marginBottom: '15px' }} />
-                    <div>No results found for "{debouncedTerm}"</div>
+            {/* Loading State */}
+            {isLoading && (
+                <div className="text-center text-accent text-base py-4">
+                    Searching database...
                 </div>
             )}
 
+            {/* Empty State */}
+            {!isLoading && debouncedTerm && (!results || results.length === 0) && (
+                <div className="text-center text-gray-500 py-16 bg-surface-card rounded-xl border border-border">
+                    <SearchIcon size={40} className="text-gray-700 mx-auto mb-4" />
+                    <p className="text-base">No results found for "<span className="text-gray-300">{debouncedTerm}</span>"</p>
+                    <p className="text-sm text-gray-600 mt-1">Try different keywords or check your spelling</p>
+                </div>
+            )}
+
+            {/* Results Count */}
             {!isLoading && results && results.length > 0 && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                <div className="mb-4 text-sm text-gray-500">
+                    {results.length} result{results.length !== 1 ? 's' : ''} found
+                </div>
+            )}
+
+            {/* Results List */}
+            {!isLoading && results && results.length > 0 && (
+                <div className="flex flex-col gap-3">
                     {results.map((result) => (
                         <div
                             key={`${result.type}-${result.id}`}
                             onClick={() => handleResultClick(result)}
-                            style={{
-                                backgroundColor: '#1a1a1a',
-                                border: '1px solid #333',
-                                borderRadius: '10px',
-                                padding: '20px',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                gap: '10px'
-                            }}
-                            onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#A076F9'; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.backgroundColor = '#1f1f1f'; }}
-                            onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.backgroundColor = '#1a1a1a'; }}
+                            className="bg-surface-card border border-border rounded-lg p-5 cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:border-accent hover:bg-surface-hover group"
                         >
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                    {getIcon(result.type, result)}
-                                    <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '500', color: 'white' }}>
+                            {/* Top Row: Icon + Title + Type Badge + Arrow */}
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3 min-w-0">
+                                    <div className="shrink-0">{getIcon(result.type, result)}</div>
+                                    <h3 className="m-0 text-base font-medium text-white truncate">
                                         {result.title}
                                     </h3>
-                                    <span style={{ fontSize: '12px', padding: '4px 10px', borderRadius: '12px', backgroundColor: '#333', color: '#ccc', textTransform: 'capitalize' }}>
+                                    <span className={`text-xs px-2.5 py-0.5 rounded-full capitalize border shrink-0 ${getTypeBadgeColor(result.type)}`}>
                                         {result.type}
                                     </span>
                                 </div>
-                                <ArrowUpRight size={18} color="#555" />
+                                <ArrowUpRight size={16} className="text-gray-600 group-hover:text-accent transition-colors shrink-0 ml-3" />
                             </div>
                             
+                            {/* Preview Text */}
                             {result.preview && (
-                                <p style={{ margin: 0, color: '#9ca3af', fontSize: '14px', lineHeight: '1.6' }}>
+                                <p className="m-0 mt-2.5 text-gray-400 text-sm leading-relaxed line-clamp-2">
                                     {result.preview}
                                 </p>
                             )}
 
-                            {(result.category || (result.tags && result.tags.length > 0)) && (
-                                <div style={{ display: 'flex', gap: '15px', marginTop: '8px' }}>
-                                    {result.category && (
-                                        <span style={{ fontSize: '13px', color: '#A076F9', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                                            Category: {result.category}
-                                        </span>
-                                    )}
+                            {/* Category */}
+                            {result.category && (
+                                <div className="mt-3 flex items-center gap-2">
+                                    <span className="text-xs text-accent">
+                                        📁 {result.category}
+                                    </span>
                                 </div>
                             )}
                         </div>
                     ))}
+                </div>
+            )}
+
+            {/* Initial State — No search yet */}
+            {!debouncedTerm && (
+                <div className="text-center py-20 text-gray-600">
+                    <SearchIcon size={48} className="mx-auto mb-4 text-gray-700" />
+                    <p className="text-base">Start typing to search across all your knowledge</p>
+                    <p className="text-sm text-gray-700 mt-1">Notes • Documents • Resources</p>
                 </div>
             )}
         </div>

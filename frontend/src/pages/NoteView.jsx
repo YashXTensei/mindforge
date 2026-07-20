@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchNote, updateNote, fetchCategories, fetchTags } from '../api/notes';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import remarkBreaks from 'remark-breaks';
 import { ArrowLeft, Edit2, Save, X, Trash2 } from 'lucide-react';
 
 export default function NoteView() {
@@ -64,7 +66,7 @@ export default function NoteView() {
     };
 
     return (
-        <div className="max-w-4xl mx-auto p-10 text-gray-200">
+        <div className="max-w-4xl mx-auto p-10 text-gray-200 animate-fade-in">
             {/* Header Actions */}
             <div className="flex justify-between mb-8">
                 <button onClick={() => navigate('/notes')} className="bg-transparent border-none text-accent cursor-pointer flex items-center gap-2 hover:text-accent-dark">
@@ -106,8 +108,8 @@ export default function NoteView() {
                         ))}
                     </div>
 
-                    <div className="bg-surface-card p-8 rounded-xl border border-border min-h-[300px] leading-relaxed text-gray-300">
-                        <ReactMarkdown>{note.content}</ReactMarkdown>
+                    <div className="bg-surface-card p-8 rounded-xl border border-border min-h-[300px] leading-relaxed text-gray-300 prose prose-invert max-w-none">
+                        <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>{note.content}</ReactMarkdown>
                     </div>
                 </div>
             ) : (

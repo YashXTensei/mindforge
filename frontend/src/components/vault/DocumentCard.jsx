@@ -14,13 +14,18 @@ export function DocumentCard({
   document, 
   onEdit, 
   onToggleFavorite, 
-  onDelete 
+  onDelete,
+  onSelect,
+  isSelected
 }) {
   // Determine if it's an image
   const isImage = document.file?.match(/\.(jpeg|jpg|png|webp)$/i);
 
   return (
-    <div className="relative flex items-center gap-4 p-4 bg-gray-800/50 border border-gray-700 rounded-lg hover:bg-gray-800 transition-colors group">
+    <div 
+      onClick={onSelect}
+      className={`relative flex items-center gap-4 p-4 bg-gray-800/50 border rounded-lg hover:bg-gray-800 transition-colors group cursor-pointer ${isSelected ? 'border-purple-500 bg-purple-500/5 ring-1 ring-purple-500/20' : 'border-gray-700'}`}
+    >
       
       {/* Icon Placeholder or Image Thumbnail */}
       {isImage ? (
@@ -43,7 +48,8 @@ export function DocumentCard({
             href={document.file} 
             target="_blank" 
             rel="noopener noreferrer"
-            className="hover:text-purple-400 transition-colors before:absolute before:inset-0"
+            onClick={(e) => e.stopPropagation()}
+            className="hover:text-purple-400 transition-colors"
           >
             {document.title}
           </a>
