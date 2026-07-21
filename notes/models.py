@@ -1,9 +1,9 @@
 from django.db import models
 from django.conf import settings
 from taxonomy.models import Category, Tag
+from rag.mixins import ProcessingMixin
 
-
-class Note(models.Model):
+class Note(ProcessingMixin, models.Model):
     """
     User's notes with Markdown content.
     Core content model of MindForge.

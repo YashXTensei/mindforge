@@ -40,8 +40,9 @@ def document_upload_path(instance, filename):
     ext = filename.split('.')[-1]
     filename = f"{uuid.uuid4()}.{ext}"
     return os.path.join(f"vault/{instance.user.id}/documents", filename)
+from rag.mixins import ProcessingMixin
 
-class Document(BaseKnowledge):
+class Document(ProcessingMixin, BaseKnowledge):
     original_filename = models.CharField(max_length=255)
     file = models.FileField(
         upload_to=document_upload_path,

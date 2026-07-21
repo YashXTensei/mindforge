@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'taxonomy',
     'vault',
     'search',
+    'rag',
 ]
 
 MIDDLEWARE = [
@@ -167,3 +168,29 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # Vault settings
 MAX_DOCUMENT_UPLOAD_SIZE = 20 * 1024 * 1024  # 20MB
 ALLOWED_UPLOAD_EXTENSIONS = ['.pdf', '.png', '.jpg', '.jpeg', '.webp']
+
+# ──────────────────────────────────────────────
+# RAG Configuration
+# ──────────────────────────────────────────────
+RAG_CONFIG = {
+    'EMBEDDING_PROVIDER': 'cohere',
+    'EMBEDDING_MODEL': 'embed-english-v3.0',
+    'EMBEDDING_DIMENSIONS': 1024,
+    'CHAT_PROVIDER': 'gemini',
+    'CHAT_MODEL': 'gemini-2.0-flash',
+    'CHUNK_SIZE': 500,        # tokens per chunk
+    'CHUNK_OVERLAP': 50,      # overlap tokens between chunks
+    'SEARCH_TOP_K': 10,       # semantic search results count
+}
+
+# Celery Configuration
+CELERY_BROKER_URL = env('REDIS_URL', default='redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = env('REDIS_URL', default='redis://localhost:6379/0')
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'Asia/Kolkata'
+
+# API Keys
+COHERE_API_KEY = env('COHERE_API_KEY', default='')
+GEMINI_API_KEY = env('GEMINI_API_KEY', default='')

@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: mindforge-db
+    environment:
+      POSTGRES_DB: mindforge
+      POSTGRES_USER: mindforge_user
+      POSTGRES_PASSWORD: mindforge123
+    ports:
+      - "5433:5432"
+    volumes:
+      - mindforge_pgdata:/var/lib/postgresql/data
+
+  redis:
+    image: redis:latest
+    container_name: mindforge-redis
+    ports:
+      - "6379:6379"
+
+volumes:
+  mindforge_pgdata:
