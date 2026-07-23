@@ -176,6 +176,8 @@ RAG_CONFIG = {
     'EMBEDDING_PROVIDER': 'cohere',
     'EMBEDDING_MODEL': 'embed-english-v3.0',
     'EMBEDDING_DIMENSIONS': 1024,
+    'EMBEDDING_BATCH_SIZE': 96,
+    'EMBEDDING_MAX_RETRIES': 3,
     'CHAT_PROVIDER': 'gemini',
     'CHAT_MODEL': 'gemini-2.0-flash',
     'CHUNK_SIZE': 500,        # tokens per chunk
