@@ -1,5 +1,5 @@
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, StickyNote, LogOut, User, Archive, Search } from 'lucide-react';
+import { LayoutDashboard, StickyNote, LogOut, User, Archive, Search, Bot } from 'lucide-react';
 import { Button } from './ui/Button';
 
 export default function Layout() {
@@ -19,13 +19,16 @@ export default function Layout() {
         { path: '/search', name: 'Search', icon: <Search size={20} /> },
         { path: '/notes', name: 'Notes', icon: <StickyNote size={20} /> },
         { path: '/vault', name: 'Vault', icon: <Archive size={20} /> },
+        { path: '/chat', name: 'AI Chat', icon: <Bot size={20} /> },
         { path: '/profile', name: 'Profile', icon: <User size={20} /> },
     ];
 
+    const isChat = location.pathname === '/chat';
+
     return (
-        <div className="flex min-h-screen bg-[#0a0a0a] text-white font-sans">
+        <div className="flex h-screen overflow-hidden bg-[#0a0a0a] text-white font-sans">
             {/* Sidebar */}
-            <aside className="w-64 bg-gray-950 border-r border-gray-800 flex flex-col p-6 shadow-xl z-10">
+            <aside className="w-64 bg-gray-950 border-r border-gray-800 flex flex-col p-6 shadow-xl z-10 shrink-0">
                 {/* Logo Area */}
                 <div className="flex items-center gap-3 mb-10 px-2">
                     <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-purple-500/20">
@@ -76,8 +79,8 @@ export default function Layout() {
             </aside>
 
             {/* Main Content Area */}
-            <main className="flex-1 p-8 overflow-y-auto relative">
-                <div className="max-w-7xl mx-auto h-full">
+            <main className={`flex-1 overflow-y-auto relative ${isChat ? 'p-0' : 'p-8'}`}>
+                <div className={`mx-auto h-full ${isChat ? 'w-full' : 'max-w-7xl'}`}>
                     <Outlet />
                 </div>
             </main>

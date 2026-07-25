@@ -21,6 +21,7 @@ urlpatterns = [
     path('api/', include('notes.urls')),
     path('api/vault/', include('vault.urls')),
     path('api/search/', include('search.urls')),
+    path('api/rag/', include('rag.urls')),
 ]
 
 if settings.DEBUG:
