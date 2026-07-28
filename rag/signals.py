@@ -19,7 +19,7 @@ def trigger_document_processing(sender, instance, created, **kwargs):
     Uses transaction.on_commit to ensure the DB row is committed
     before Celery picks up the task (prevents race condition).
     """
-    if created:
+    if created or getattr(instance, '_file_changed', False):
         def queue_task():
             from .tasks import process_document
             process_document.delay(instance.id)

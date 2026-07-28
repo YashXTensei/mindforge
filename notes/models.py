@@ -32,3 +32,15 @@ class Note(ProcessingMixin, models.Model):
 
     def __str__(self):
         return self.title
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._original_content = self.content if self.pk else None
+
+    def save(self, *args, **kwargs):
+        if self.pk and self.content != self._original_content:
+            self._content_changed = True
+        else:
+            self._content_changed = False
+        super().save(*args, **kwargs)
+        self._original_content = self.content

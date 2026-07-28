@@ -2,6 +2,7 @@ import { Pencil, Trash2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkBreaks from 'remark-breaks';
+import { Link } from 'react-router-dom';
 
 export function NoteCard({ note, onEdit, onDelete, onNavigate, isDeleting, isSelected }) {
     return (
@@ -10,9 +11,15 @@ export function NoteCard({ note, onEdit, onDelete, onNavigate, isDeleting, isSel
             className={`bg-surface-card p-5 rounded-lg border flex justify-between items-start cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:border-accent ${isSelected ? 'border-accent bg-accent/5 ring-1 ring-accent/20' : 'border-border'}`}
         >
             <div className="flex-grow">
-                <h3 className="m-0 mb-2.5 text-white">
-                    {note.is_pinned && '📌 '} {note.title}
-                </h3>
+                <Link 
+                    to={`/notes/${note.id}`}
+                    onClick={(e) => e.stopPropagation()}
+                    className="no-underline group"
+                >
+                    <h3 className="m-0 mb-2.5 text-white group-hover:text-accent transition-colors">
+                        {note.is_pinned && '📌 '} {note.title}
+                    </h3>
+                </Link>
                 <div className="text-gray-400 text-sm mt-3 line-clamp-3 leading-relaxed prose prose-invert prose-sm max-w-none">
                     <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
                         {note.content}

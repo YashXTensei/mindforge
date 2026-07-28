@@ -55,6 +55,18 @@ class Document(ProcessingMixin, BaseKnowledge):
     class Meta(BaseKnowledge.Meta):
         pass
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._original_file = self.file.name if self.pk else None
+
+    def save(self, *args, **kwargs):
+        if self.pk and self.file.name != self._original_file:
+            self._file_changed = True
+        else:
+            self._file_changed = False
+        super().save(*args, **kwargs)
+        self._original_file = self.file.name
+
 class Resource(BaseKnowledge):
     """External bookmarks/references — articles, videos, repos, docs."""
 
