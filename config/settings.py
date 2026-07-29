@@ -179,7 +179,10 @@ RAG_CONFIG = {
     'EMBEDDING_BATCH_SIZE': 96,
     'EMBEDDING_MAX_RETRIES': 3,
     'CHAT_PROVIDER': 'gemini',
-    'CHAT_MODEL': 'gemini-3.5-flash',
+    'CHAT_MODEL': env(
+    'GEMINI_CHAT_MODEL',
+    default='gemini-3.6-flash'
+),
     'CHUNK_SIZE': 500,        # tokens per chunk
     'CHUNK_OVERLAP': 50,      # overlap tokens between chunks
     'SEARCH_TOP_K': 10,       # semantic search results count
