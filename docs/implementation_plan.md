@@ -1,230 +1,190 @@
-Phase 3 — RAG Engine Implementation Plan (v2)
-Updated based on architecture review feedback. Changes: Processing status tracking, flexible embeddings, GenericForeignKey, failure handling, Cohere+Gemini split.
+# ADR: Image Intelligence (Phase 3.5)
 
-Architecture Decisions
-1. Processing Status Pipeline
-Track document/note processing through each stage with a status field:
+## 1. Problem
 
+MindForge ka RAG pipeline sirf PDF text samajhta hai. Do blind spots hain:
+- **Standalone images** (screenshots, study notes, diagrams) vault me padi rehti hain bina AI understanding ke
+- **PDF embedded images** (diagrams on page 5, charts on page 12) silently skip ho jaati hain
 
-PENDING → EXTRACTING → CHUNKING → EMBEDDING → COMPLETED
-                                                   ↘ FAILED
-Added to both Document and Note models as a new mixin/fields.
+Real-world vault content ka ~30-40% visual hai. Bina image support ke, RAG pipeline incomplete hai.
 
-2. Flexible Embedding Dimensions
-Instead of hardcoding VectorField(1024), dimensions will come from settings.py:
+## 2. Chosen Solution
 
-python
+**Approach 1: Image → Text Representation → Existing Pipeline**
 
-# settings.py
-RAG_CONFIG = {
-    'EMBEDDING_PROVIDER': 'cohere',
-    'EMBEDDING_MODEL': 'embed-english-v3.0',
-    'EMBEDDING_DIMENSIONS': 1024,
-    'CHAT_PROVIDER': 'gemini',
-    'CHAT_MODEL': 'gemini-2.0-flash',
-    'CHUNK_SIZE': 500,        # tokens
-    'CHUNK_OVERLAP': 50,      # tokens
-    'SEARCH_TOP_K': 10,
+```
+Image ──→ Gemini Vision ──→ Structured Text ──→ [Existing] Chunk → Embed → PGVector
+```
+
+### Core Decisions
+
+| Decision | Choice | Rationale |
+|---|---|---|
+| Vision API | Gemini (already in stack) | No new dependency, free tier available |
+| Output format | Structured (type + summary + description + OCR) | Richer semantic context than plain paragraph |
+| Pipeline changes | Extraction layer only | Zero changes to chunking, embedding, search, chat |
+| DB schema changes | None | Existing `metadata` JSONField is sufficient |
+| Duplicate OCR | Programmatic detection (difflib) | More reliable than prompt-based deduplication |
+| Rate limiting | Celery task-level + Redis throttle | Non-blocking, doesn't freeze workers |
+| Architecture | BaseExtractor pattern | Future-proofs for DOCX, PPTX, audio, etc. |
+
+### New File: `rag/vision.py`
+
+Single responsibility: Talk to Gemini Vision, return structured data.
+
+```python
+def describe_image(image_bytes: bytes, filename: str) -> dict:
+    """
+    Returns:
+        {
+            "image_type": "flowchart",      # auto-detected category
+            "summary": "...",               # 1-2 sentence overview
+            "description": "...",           # detailed semantic description
+            "ocr_text": "..."              # all visible text extracted
+        }
+    """
+```
+
+### Rich Knowledge Representation
+
+Combined text that gets passed to chunking:
+
+```
+=== Image Type ===
+Flowchart
+
+=== Summary ===
+A flowchart showing the Django request-response cycle from client to server.
+
+=== Semantic Description ===
+The diagram shows a horizontal flow starting from 'Client Browser'...
+Each box is color-coded: blue for client-side, green for server-side.
+
+=== Visible Text ===
+Client Browser → URL Router → View → Template → Response
+```
+
+### Extractor Abstraction
+
+```
+BaseExtractor (ABC)
+├── extract(file_path) → [{"page_num": int, "text": str}]
+├── supports(file_ext) → bool
+│
+├── PDFExtractor        ← PyMuPDF text + embedded image extraction
+├── ImageExtractor      ← Gemini Vision → structured text
+└── (future: DocxExtractor, PptxExtractor, AudioExtractor)
+```
+
+Every extractor returns the **same format**. Pipeline doesn't care what the source was.
+
+### Duplicate OCR Detection
+
+```python
+from difflib import SequenceMatcher
+
+def is_duplicate_text(ocr_text: str, page_text: str, threshold=0.85) -> bool:
+    """If OCR text is 85%+ similar to already-extracted page text, skip it."""
+    ratio = SequenceMatcher(None, ocr_text.strip(), page_text.strip()).ratio()
+    return ratio >= threshold
+```
+
+Used when merging PDF page text with image OCR. If the image is just a screenshot of the same text that's already on the page, we don't duplicate it.
+
+### Rate Limiting Strategy
+
+Instead of `time.sleep()` (which blocks the Celery worker), we use two layers:
+
+**Layer 1 — Celery Task-Level Rate Limiting:**
+```python
+@shared_task(bind=True, rate_limit='15/m')  # max 15 image tasks per minute
+def process_image_description(self, image_data):
+    ...
+```
+
+**Layer 2 — Redis-Based Token Bucket (for within-task calls):**
+When a single PDF has 20 embedded images, we use a Redis-backed throttle to control Gemini API call frequency without blocking the worker thread entirely. If the bucket is empty, the task re-queues itself with a `countdown` delay instead of sleeping.
+
+### Enriched Chunk Metadata
+
+```python
+# Standalone image chunk
+metadata = {
+    "page_num": 1,
+    "source_format": "image",
+    "image_type": "architecture_diagram",
+    "contains_text": True,
+    "contains_graph": False,
+    "original_filename": "system_arch.png"
 }
-Migration mein dimension dynamically read hogi settings se.
 
-3. GenericForeignKey for Chunk → Source
-Instead of raw source_type + source_id strings, use Django's contenttypes framework:
+# PDF page with embedded images
+metadata = {
+    "page_num": 5,
+    "source_format": "pdf",
+    "has_images": True,
+    "image_count": 2,
+    "image_types": ["flowchart", "table"]
+}
+```
 
-python
+No schema migration needed. Everything fits in existing `JSONField`.
 
-from django.contrib.contenttypes.fields import GenericForeignKey
-from django.contrib.contenttypes.models import ContentType
-class Chunk(models.Model):
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
-    object_id = models.PositiveIntegerField()
-    source = GenericForeignKey('content_type', 'object_id')
-Benefits: Database-level integrity, proper cascading deletes, Django admin support.
+### Files Changed
 
-4. Failure Handling
-Add error tracking fields for retry logic:
+| File | Type | What Changes |
+|---|---|---|
+| `rag/vision.py` | **NEW** | Gemini Vision API wrapper |
+| `rag/extraction.py` | **REFACTOR** | BaseExtractor + PDFExtractor + ImageExtractor |
+| `rag/tasks.py` | **MODIFY** | Route by file type, use extractor pattern |
+| `config/settings.py` | **MODIFY** | Add `VISION_MODEL`, `MAX_IMAGE_SIZE` to `RAG_CONFIG` |
 
-python
+### Files NOT Changed
 
-error_message = models.TextField(blank=True, default='')
-retry_count = models.IntegerField(default=0)
-failed_at = models.DateTimeField(null=True, blank=True)
-5. AI Provider Split
-Task	Provider	Model	Why
-Embeddings	Cohere	embed-english-v3.0	Best free embed API, 1024 dims
-Chat/Generation	Google Gemini	gemini-2.0-flash	Fast, generous free tier
-Updated Model Schemas
-New Mixin: ProcessingMixin
-Added to Document and Note models:
+| File | Why Untouched |
+|---|---|
+| `rag/chunking.py` | Input format unchanged (`[{page_num, text}]`) |
+| `rag/embeddings.py` | Still embedding text, not images |
+| `rag/search.py` | PGVector cosine search unchanged |
+| `rag/chat.py` | Context injection unchanged |
+| `rag/models.py` | Chunk model already flexible |
+| `rag/serializers.py` | No new API contracts |
+| All frontend files | Zero UI changes needed |
 
-python
+## 3. Alternatives Considered
 
-class ProcessingStatus(models.TextChoices):
-    PENDING = 'pending', 'Pending'
-    EXTRACTING = 'extracting', 'Extracting Text'
-    CHUNKING = 'chunking', 'Chunking'
-    EMBEDDING = 'embedding', 'Generating Embeddings'
-    COMPLETED = 'completed', 'Completed'
-    FAILED = 'failed', 'Failed'
-class ProcessingMixin(models.Model):
-    processing_status = models.CharField(
-        max_length=20,
-        choices=ProcessingStatus.choices,
-        default=ProcessingStatus.PENDING,
-    )
-    error_message = models.TextField(blank=True, default='')
-    retry_count = models.IntegerField(default=0)
-    failed_at = models.DateTimeField(null=True, blank=True)
-    processed_at = models.DateTimeField(null=True, blank=True)
-    class Meta:
-        abstract = True
-Chunk Model (Updated)
-python
+| Alternative | Why Rejected |
+|---|---|
+| **Multimodal Embeddings** (CLIP, Google Multimodal) | Requires replacing Cohere, redesigning retrieval pipeline, separate vector spaces for text vs image. Overkill for our use case |
+| **Image Region Chunking** (split image into quadrants, embed each) | Too complex, fragile for diagrams/flowcharts where meaning spans the full image |
+| **Store images as-is, send to Gemini at chat time** | Slow (API call on every search), expensive, doesn't scale |
+| **Local Vision Model** (LLaVA, etc.) | Requires GPU, complex deployment, worse quality than Gemini |
 
-class Chunk(models.Model):
-    # GenericForeignKey → links to Note OR Document
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
-    object_id = models.PositiveIntegerField()
-    source = GenericForeignKey('content_type', 'object_id')
-    # Content
-    content = models.TextField()                      # chunk ka actual text
-    embedding = VectorField(dimensions=settings.RAG_CONFIG['EMBEDDING_DIMENSIONS'])
-    # Metadata
-    chunk_index = models.IntegerField()               # order within source
-    source_title = models.CharField(max_length=255)   # denormalized for quick access
-    metadata = models.JSONField(default=dict)         # {page_num, section, char_start, char_end}
-    # Ownership
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    created_at = models.DateTimeField(auto_now_add=True)
-    class Meta:
-        ordering = ['content_type', 'object_id', 'chunk_index']
-        indexes = [
-            models.Index(fields=['content_type', 'object_id']),
-            models.Index(fields=['user']),
-        ]
-ChatConversation Model
-python
+## 4. Trade-offs
 
-class ChatConversation(models.Model):
-    title = models.CharField(max_length=255, default='New Chat')
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    class Meta:
-        ordering = ['-updated_at']
-ChatMessage Model
-python
+| We Get | We Give Up |
+|---|---|
+| Image understanding via existing pipeline | Direct pixel-level image search |
+| Zero changes to retrieval/chat/search | Slightly lossy representation (text description vs actual image) |
+| Simple architecture (1 new file) | Dependency on Gemini Vision API availability |
+| Future extractor pattern | Small refactor of existing extraction.py |
+| Works today with free tier | Rate limited on high-volume image processing |
 
-class ChatMessage(models.Model):
-    class Role(models.TextChoices):
-        USER = 'user', 'User'
-        ASSISTANT = 'assistant', 'Assistant'
-    conversation = models.ForeignKey(
-        ChatConversation, on_delete=models.CASCADE, related_name='messages'
-    )
-    role = models.CharField(max_length=10, choices=Role.choices)
-    content = models.TextField()
-    sources = models.JSONField(default=list, blank=True)
-    # sources format: [{"chunk_id": 1, "source_title": "...", "snippet": "...", "source_type": "note", "source_id": 5}]
-    created_at = models.DateTimeField(auto_now_add=True)
-Updated Technology Stack
-Package	Version	Purpose
-django-pgvector	latest	VectorField for Django
-celery[redis]	latest	Background task queue
-redis	latest	Celery broker
-pymupdf	latest	PDF text extraction
-cohere	latest	Embeddings API
-google-generativeai	latest	Gemini chat API
-tiktoken	latest	Token counting for chunking
-Execution Steps (Updated)
-Step 1: Infrastructure Setup
- Install PGVector extension in PostgreSQL
- Install Redis (WSL/Docker/Memurai)
- pip install all new packages
- Add Celery config to Django (config/celery.py, update __init__.py)
- Add RAG_CONFIG to settings.py
- Add API keys to .env (COHERE_API_KEY, GEMINI_API_KEY)
- Verify Celery worker starts and connects to Redis
-Step 2: rag App + Models
- python manage.py startapp rag
- Create ProcessingMixin
- Add processing fields to Document and Note models (migration)
- Create Chunk, ChatConversation, ChatMessage models
- Run migrations
- Register in INSTALLED_APPS
-Step 3: Text Extraction
- Create rag/extraction.py
- extract_text_from_pdf(file_path) → returns {pages: [{page_num, text}]}
- extract_text_from_note(note) → returns plain text
- Unit tests for extraction
-Step 4: Chunking Pipeline
- Create rag/chunking.py
- chunk_text(text, chunk_size=500, overlap=50) → returns list of chunks
- Each chunk: {content, chunk_index, metadata}
- Unit tests for chunking edge cases
-Step 5: Embeddings Service
- Create rag/embeddings.py
- generate_embeddings(texts: list[str]) → returns list of vectors
- Batch processing (Cohere allows 96 per call)
- Error handling + retry logic
- Unit test with mock API
-Step 6: Celery Tasks
- Create rag/tasks.py
- process_document(document_id) → extract → chunk → embed → save
- process_note(note_id) → chunk → embed → save
- reprocess_failed(source_type, source_id) → retry failed items
- Django signal: post_save on Document → queue task
- Status updates at each pipeline stage
- Error handling: set FAILED status + error_message
-Step 7: Semantic Search API
- Create rag/search.py
- semantic_search(query, user, top_k=10) → returns ranked chunks
- API endpoint: GET /api/rag/search/?q=...
- Serializer for search results
- Combine with existing keyword search (hybrid search)
-Step 8: RAG Chat API
- Create rag/chat.py
- System prompt template with context injection
- POST /api/rag/chat/ → create message + get AI response
- GET /api/rag/conversations/ → list conversations
- GET /api/rag/conversations/:id/ → get messages
- Source citation extraction + formatting
- Gemini API integration
-Step 9: Frontend Chat UI
- New /chat route + page
- Conversation sidebar (list)
- Chat message bubbles (user + assistant)
- Source citations (clickable, expandable)
- Input box with send button
- Loading states + error handling
- Semantic search toggle on existing Search page
-Open Questions (Resolved ✅)
-Question	Decision
-AI Provider for embeddings?	✅ Cohere (embed-english-v3.0)
-AI Provider for chat?	✅ Google Gemini (gemini-2.0-flash)
-Index Resources (URLs)?	❌ Not now, Phase 4
-Processing status tracking?	✅ Yes, ProcessingMixin on Document + Note
-Embedding dimensions?	✅ Configurable via settings.RAG_CONFIG
-Chunk→Source relation?	✅ GenericForeignKey (contenttypes)
-Failure handling?	✅ error_message, retry_count, failed_at
-IMPORTANT
+**Acceptable?** Yes. For study materials, screenshots, flowcharts, and diagrams — text representation captures 95%+ of the semantic meaning. The 5% we lose (exact pixel layout) is irrelevant for RAG search and chat.
 
-Still Need From You:
-Redis — Kaise install karoge? (WSL / Docker / Memurai)
-Cohere API Key — https://dashboard.cohere.com/api-keys se free mein mil jayega
-Gemini API Key — https://aistudio.google.com/apikey se free mein mil jayega
-Verification Plan
-Automated Tests
-bash
+## 5. Future Extensions
 
-pytest rag/tests/ -v
-Chunk model CRUD
-Chunking function (edge cases: empty text, very long text, special chars)
-Extraction function (PDF with multiple pages)
-Search relevance (known query → expected chunks)
-Manual Verification
-Upload PDF → DB mein chunks + embeddings check karo
-Processing status UI mein real-time update dikhe
-Semantic search → meaningful, ranked results
-Chat → accurate answer with correct source citations
-Failed processing → retry karne pe recover ho
+These are **not** in scope for Phase 3.5, but the architecture supports them:
+
+| Extension | How It Fits |
+|---|---|
+| **DOCX Extractor** | New `DocxExtractor(BaseExtractor)` — same pattern |
+| **PPTX Extractor** | New `PptxExtractor(BaseExtractor)` — slides as pages |
+| **Audio Transcripts** | New `AudioExtractor(BaseExtractor)` — Whisper → text → embed |
+| **Multimodal Embeddings** | Swap Cohere provider in `embeddings.py` — extraction layer unchanged |
+| **Image Type Filtering** | Frontend filter: "Show only flowchart sources" using `metadata.image_type` |
+| **Re-describe with better model** | Just update `VISION_MODEL` in settings, reprocess |
+
+---
+
+> **Phase Classification:** This is **Phase 3.5** — an extension of the existing RAG engine's ingestion capabilities. Not a new phase.
