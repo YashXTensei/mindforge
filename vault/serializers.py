@@ -14,9 +14,10 @@ class DocumentSerializer(serializers.ModelSerializer): # Name changed
         fields = [
             'id', 'title', 'file', 'description', 'category', 'category_detail',
             'tags', 'tags_detail', 'file_size', 'page_count', 'is_favorite', 
+            'processing_status', 'processed_at',
             'created_at', 'updated_at'
         ]
-        read_only_fields = ['file_size', 'page_count']
+        read_only_fields = ['file_size', 'page_count', 'processing_status', 'processed_at']
         
     # Apna validate_file logic same rakho bas 10MB limit rakho
 

@@ -1,6 +1,7 @@
 import React from 'react';
 import { FileText, Image as ImageIcon, Pencil, Star, Trash2 } from 'lucide-react';
 import { Badge } from '../ui/Badge';
+import { ProcessingStatus } from './ProcessingStatus';
 
 // Helper: bytes → human readable
 function formatFileSize(bytes) {
@@ -75,17 +76,26 @@ export function DocumentCard({
         )}
       </div>
 
-      {/* Actions (Visible on hover using Tailwind's 'group-hover') */}
+      {/* Actions (Visible on hover using Tailwind's 'group-hover') — stopPropagation prevents preview from opening */}
       <div className="relative z-10 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-        <button onClick={() => onEdit(document)} className="p-2 text-gray-400 hover:text-white rounded-md hover:bg-gray-700">
+        <button onClick={(e) => { e.stopPropagation(); onEdit(document); }} className="p-2 text-gray-400 hover:text-white rounded-md hover:bg-gray-700">
           <Pencil size={16} />
         </button>
-        <button onClick={() => onToggleFavorite(document)} className="p-2 text-gray-400 hover:text-yellow-500 rounded-md hover:bg-gray-700">
+        <button onClick={(e) => { e.stopPropagation(); onToggleFavorite(document); }} className="p-2 text-gray-400 hover:text-yellow-500 rounded-md hover:bg-gray-700">
           <Star size={16} fill={document.is_favorite ? '#EAB308' : 'none'} className={document.is_favorite ? 'text-yellow-500' : ''} />
         </button>
-        <button onClick={() => onDelete(document.id)} className="p-2 text-gray-400 hover:text-red-500 rounded-md hover:bg-gray-700">
+        <button onClick={(e) => { e.stopPropagation(); onDelete(document.id); }} className="p-2 text-gray-400 hover:text-red-500 rounded-md hover:bg-gray-700">
           <Trash2 size={16} />
         </button>
+      </div>
+
+      {/* Processing Status — bottom right corner */}
+      <div className="absolute bottom-2 right-3">
+        <ProcessingStatus 
+          status={document.processing_status}
+          createdAt={document.created_at}
+          processedAt={document.processed_at}
+        />
       </div>
 
     </div>

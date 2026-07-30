@@ -43,6 +43,16 @@ export default function Vault() {
     const { data: documents, isLoading: documentsLoading } = useQuery({
         queryKey: ['documents', documentFilters],
         queryFn: () => fetchDocuments(documentFilters),
+        // Auto-poll every 3s while any document is still processing
+        refetchInterval: (query) => {
+            const docs = query.state.data;
+            if (!docs) return false;
+            const isProcessing = docs.some(d => 
+                d.processing_status && 
+                !['completed', 'failed'].includes(d.processing_status)
+            );
+            return isProcessing ? 3000 : false;
+        },
     });
 
     const { data: resources, isLoading: resourcesLoading } = useQuery({
