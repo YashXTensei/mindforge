@@ -120,8 +120,22 @@ def chat(conversation_id, user_message, user):
     except Exception as e:
         logger.error(f"Gemini API error: {str(e)}")
         import traceback
-        trace_str = traceback.format_exc()
-        assistant_content = f"I'm sorry, I encountered an error: {str(e)}\n\nTraceback:\n```\n{trace_str}\n```"
+        logger.error(traceback.format_exc())  # Log full trace server-side only
+
+        error_msg = str(e).lower()
+        if '429' in error_msg or 'rate limit' in error_msg or 'quota' in error_msg or 'resource_exhausted' in error_msg:
+            assistant_content = (
+                "⏳ **API Rate Limit Exceeded**\n\n"
+                "I am currently experiencing a high volume of requests and have reached the AI provider's rate limit. "
+                "Please wait approximately **30 to 60 seconds** before sending another message.\n\n"
+                "*(Note: The current free tier allows a maximum of 5 requests per minute.)*"
+            )
+        else:
+            assistant_content = (
+                "❌ **Processing Error**\n\n"
+                "I apologize, but I encountered an unexpected error while generating a response. "
+                "Please try submitting your query again in a few moments."
+            )
         sources = []
         prompt_tokens = None
         completion_tokens = None

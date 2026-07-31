@@ -2,6 +2,7 @@ from django.db import models
 from django.conf import settings
 from taxonomy.models import Category, Tag
 from rag.mixins import ProcessingMixin
+from django.contrib.contenttypes.fields import GenericRelation
 
 class Note(ProcessingMixin, models.Model):
     """
@@ -26,6 +27,9 @@ class Note(ProcessingMixin, models.Model):
     is_pinned = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    # Automatically delete related chunks when this object is deleted
+    chunks = GenericRelation('rag.Chunk')
 
     class Meta:
         ordering = ['-updated_at']

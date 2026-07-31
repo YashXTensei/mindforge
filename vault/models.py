@@ -2,6 +2,7 @@ from django.db import models
 from django.conf import settings
 from taxonomy.models import Category, Tag
 from django.core.validators import FileExtensionValidator
+from django.contrib.contenttypes.fields import GenericRelation
 import os
 import uuid
 
@@ -28,6 +29,9 @@ class BaseKnowledge(models.Model):
     is_favorite = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    # Automatically delete related chunks when this object is deleted
+    chunks = GenericRelation('rag.Chunk', related_query_name='%(class)s_chunks')
 
     class Meta:
         abstract = True  # <-- No table created for this model!
