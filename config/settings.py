@@ -186,6 +186,8 @@ RAG_CONFIG = {
     'CHUNK_SIZE': 500,        # tokens per chunk
     'CHUNK_OVERLAP': 50,      # overlap tokens between chunks
     'SEARCH_TOP_K': 10,       # semantic search results count
+    'VISION_MODEL': env('GEMINI_VISION_MODEL', default='gemini-3.6-flash'),
+    'MAX_IMAGE_SIZE_MB': 5,   # max size for processing images
 }
 
 # Celery Configuration

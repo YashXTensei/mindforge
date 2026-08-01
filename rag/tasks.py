@@ -24,7 +24,7 @@ def process_document(self, document_id):
     Extract text → Chunk → Embed → Save to DB.
     """
     from vault.models import Document
-    from .extraction import extract_text_from_pdf
+    from .extraction import extract_text_from_file
     from .chunking import chunk_text
     from .embeddings import generate_embeddings
     from .models import Chunk
@@ -36,7 +36,7 @@ def process_document(self, document_id):
         # ── Step 1: Extract Text ──
         doc.update_status('extracting')
 
-        pages = extract_text_from_pdf(doc.file.path)
+        pages = extract_text_from_file(doc.file.path)
 
         if not pages:
             doc.mark_completed()
