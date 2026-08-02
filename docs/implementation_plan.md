@@ -139,6 +139,8 @@ No schema migration needed. Everything fits in existing `JSONField`.
 | `rag/tasks.py` | **MODIFY** | Route by file type, use extractor pattern |
 | `config/settings.py` | **MODIFY** | Add `VISION_MODEL`, `MAX_IMAGE_SIZE` to `RAG_CONFIG` |
 
+> **Note (Aug 2, 2026):** Extracting embedded images from PDFs has been deferred to Phase 4. Phase 3.5 currently handles standalone images only.
+
 ### Files NOT Changed
 
 | File | Why Untouched |
