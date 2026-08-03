@@ -109,6 +109,16 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
+# ──────────────────────────────────────────────
+# Rate Limiting (Centralized Configuration)
+# ──────────────────────────────────────────────
+RATE_LIMITS = {
+    'AI_CHAT_RATE': '10/minute',
+    'AI_SEARCH_RATE': '10/minute',
+    'GENERAL_API_RATE': '120/minute',
+    'DOCUMENT_PROCESS_RATE': '5/m',   # Celery: per worker
+}
+
 # Django REST Framework
 
 REST_FRAMEWORK = {
@@ -118,8 +128,15 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ),
-    # 'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.CursorPagination',
-    # 'PAGE_SIZE': 20,
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.ScopedRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'chat_api': '10/minute',
+        'search_api': '10/minute',
+        'default': '120/minute',
+    },
+    'EXCEPTION_HANDLER': 'config.exceptions.custom_exception_handler',
 }
 
 

@@ -19,6 +19,7 @@ class SemanticSearchView(APIView):
     GET /api/rag/search/?q=What is React?
     """
     permission_classes = [IsAuthenticated]
+    throttle_scope = 'search_api'
 
     def get(self, request):
         query = request.query_params.get('q', '').strip()
@@ -121,6 +122,7 @@ class ChatView(APIView):
     If conversation_id is null, creates a new conversation.
     """
     permission_classes = [IsAuthenticated]
+    throttle_scope = 'chat_api'
 
     def post(self, request):
         message = request.data.get('message', '').strip()

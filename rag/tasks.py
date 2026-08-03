@@ -12,12 +12,15 @@ Pipeline per task:
 
 import logging
 from celery import shared_task
+from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 
 logger = logging.getLogger(__name__)
 
+DOC_RATE = settings.RATE_LIMITS.get('DOCUMENT_PROCESS_RATE', '5/m')
 
-@shared_task(bind=True, max_retries=2)
+
+@shared_task(bind=True, max_retries=2, rate_limit=DOC_RATE)
 def process_document(self, document_id):
     """
     Full RAG pipeline for a PDF Document.
@@ -101,7 +104,7 @@ def process_document(self, document_id):
         raise self.retry(exc=e, countdown=60)
 
 
-@shared_task(bind=True, max_retries=2)
+@shared_task(bind=True, max_retries=2, rate_limit=DOC_RATE)
 def process_note(self, note_id):
     """
     Full RAG pipeline for a Note.

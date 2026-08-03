@@ -26,24 +26,31 @@ This document tracks everything built in MindForge, what remains to be built, an
 - **AI Chat (Gemini):** Context-aware chatbot in the UI. Prioritizes Vault context but falls back to general knowledge seamlessly. Formats errors elegantly.
 - **Database Hygiene:** `GenericRelation` implemented to cascade-delete Chunks/Embeddings automatically when a Document/Note is deleted.
 
-### 4. Image Intelligence (Phase 3.5 - Partial)
+### 4. Image Intelligence (Phase 3.5)
 - **Standalone Image Extraction:** Uploaded images (.png, .jpg) are now processed inline using Google Gemini Vision (model: `models/gemini-3.6-flash`).
 - **Polymorphic Extractor Pattern:** Extractor logic refactored into `BaseExtractor`, `PDFExtractor`, and `ImageExtractor`.
+
+### 5. Rate Limiting (Phase 4)
+- **API Throttling (DRF):** Chat API (10/min), Semantic Search (10/min), General API (120/min) using `ScopedRateThrottle`.
+- **Celery Task Throttling:** Document/Note processing limited to 5/min per worker.
+- **Friendly Error Responses:** Custom DRF exception handler returns clean JSON instead of raw error text.
+- **Centralized Config:** All rate limits defined in `RATE_LIMITS` dict in `settings.py`.
 
 ---
 
 ## 🔴 What is Pending (To-Do)
 
-### Phase 3.5 (Deployment Prep: UI/UX, Security, Tests)
-- [ ] **Rate Limiting:** Implement rate limits for the AI chat endpoint to prevent abuse, and Celery task-level limits.
+### Phase 4 (Deployment Prep: UI/UX, Security, Tests)
+- [x] **Rate Limiting:** DRF throttling + Celery task rate limits + friendly error responses.
 - [ ] **UI/UX Polishing:** Loading skeletons, empty states, chat code-block syntax highlighting, mobile responsiveness, and manual RAG-trigger UI for Notes.
 - [ ] **Security:** Separate `settings.py` for prod/dev, hide `SECRET_KEY`, set `DEBUG = False`, lock down CORS.
 - [ ] **Routing:** Protected route guards for React frontend.
 - [ ] **Testing:** Write `pytest` test suite for the RAG engine (`rag/tests.py`).
 
-### Phase 4+ (Future Enhancements)
+### Phase 5+ (Future Enhancements)
 - [ ] **PDF Embedded Images:** Update `PDFExtractor` to extract images embedded inside PDFs, process them via `ImageExtractor`, and append the text.
 - [ ] **Duplicate OCR Detection:** Integrate the `difflib` threshold check to prevent duplicating text that already exists in the PDF text layer.
+- [ ] **Fallback Model Router:** Build a smart AI router (`ModelRouter`) that holds multiple API keys (Gemini, OpenRouter, OpenAI, etc.). If one model's rate limit is exhausted or fails, it automatically falls back to the next available model.
 
 ---
 
@@ -60,3 +67,9 @@ This document tracks everything built in MindForge, what remains to be built, an
 - **Phase 3.5 Init:** Designed ADR for Image Intelligence. Created `rag/vision.py` and converted extraction logic to a factory pattern (`BaseExtractor`). Successfully tested standalone image OCR with `CodeForces_Rating` image.
 
 *(Going forward, updates will be logged here daily with dates and specific actions taken.)*
+
+### August 3, 2026
+- **Rate Limiting:** Implemented DRF `ScopedRateThrottle` on Chat (10/min) and Search (10/min) endpoints.
+- **Celery Limits:** Added `rate_limit='5/m'` to `process_document` and `process_note` tasks.
+- **Custom Exception Handler:** Created `config/exceptions.py` for user-friendly throttle error messages.
+- **Centralized Config:** All rate limits stored in `RATE_LIMITS` dict in `settings.py`.
