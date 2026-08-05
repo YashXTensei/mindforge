@@ -73,3 +73,5 @@ This document tracks everything built in MindForge, what remains to be built, an
 - **Celery Limits:** Added `rate_limit='5/m'` to `process_document` and `process_note` tasks.
 - **Custom Exception Handler:** Created `config/exceptions.py` for user-friendly throttle error messages.
 - **Centralized Config:** All rate limits stored in `RATE_LIMITS` dict in `settings.py`.
+
+proxy commits count : 3
