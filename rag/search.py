@@ -54,12 +54,15 @@ def semantic_search(query, user, top_k=None):
     query_embedding = generate_query_embedding(query)
 
     # Step 2: PGVector cosine distance search
-    # CosineDistance returns 0 (identical) to 2 (opposite)
     # We annotate each chunk with its distance from the query vector
+    threshold = settings.RAG_CONFIG.get('SIMILARITY_THRESHOLD', 0.50)
+    max_distance = 1.0 - threshold
+
     results = (
         Chunk.objects
         .filter(user=user)
         .annotate(distance=CosineDistance('embedding', query_embedding))
+        .filter(distance__lte=max_distance)  # THRESHOLD FIX: Ignore irrelevant kachra
         .order_by('distance')  # closest first
         [:top_k]
     )

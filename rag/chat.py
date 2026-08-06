@@ -41,6 +41,30 @@ RULES:
 """
 
 
+import re
+
+# Context-dependent keywords indicating the user is referring to previous chat history
+CONTEXT_DEPENDENT_WORDS = {
+    'it', 'this', 'that', 'those', 'these', 'again', 'he', 'she', 
+    'they', 'him', 'her', 'them', 'more', 'same', 'continue', 'recheck', 'previous'
+}
+
+def requires_previous_context(query: str) -> bool:
+    """
+    Heuristic-based ambiguity detection.
+    Returns True if the query relies on conversational context.
+    Extensible: Later we can replace this with an LLM call (Level 2).
+    """
+    # Use regex to strip punctuation and extract pure words
+    words = re.findall(r"\b\w+\b", query.lower())
+    
+    # Check if any word exactly matches a context word
+    if any(word in CONTEXT_DEPENDENT_WORDS for word in words):
+        return True
+        
+    return False
+
+
 def chat(conversation_id, user_message, user):
     """
     Process a user message and generate an AI response.
@@ -72,8 +96,21 @@ def chat(conversation_id, user_message, user):
         content=user_message,
     )
 
+    # Level 1: Conversation-aware retrieval
+    search_query = user_message
+    if conversation_id and requires_previous_context(user_message):
+        # Fetch ONLY the single most recent previous user message
+        last_user_msg = ChatMessage.objects.filter(
+            conversation=conversation, 
+            role='user'
+        ).exclude(id=user_msg.id).order_by('-created_at').first()
+        
+        if last_user_msg:
+            # Use natural text concatenation instead of symbols like '|'
+            search_query = f"{last_user_msg.content}. {user_message}"
+
     # Get relevant context via semantic search
-    context_text, sources = get_context_for_chat(user_message, user, top_k=5)
+    context_text, sources = get_context_for_chat(search_query, user, top_k=5)
 
     # Build the prompt
     if context_text:
