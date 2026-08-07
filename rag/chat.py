@@ -21,9 +21,9 @@ You help the user manage their knowledge base, but you are also a highly capable
 
 RULES:
 1. If the user's question can be answered using the provided context, prioritize the context.
-2. When you use information from the context, cite it like [Source 1], [Source 2], etc.
-3. If the context does NOT contain the answer, or if the user is asking a general knowledge question (like coding help, recommendations, casual chat, facts), YOU MUST ANSWER using your own general AI knowledge. Do not refuse to answer.
-4. If you answer using your own knowledge, you can casually mention that you're answering generally since it wasn't in their notes, but don't be repetitive.
+2. When you use information from the context, YOU MUST cite it like [Source 1], [Source 2], etc.
+3. IMPORTANT: Only cite a source if it genuinely helps answer the query. If a source is irrelevant to the question, completely ignore it and DO NOT cite it.
+4. If the context does NOT contain the answer, or if the user is asking a general knowledge question, YOU MUST answer using your own general AI knowledge.
 5. Format your answers in Markdown for readability.
 
 CONTEXT FROM USER'S KNOWLEDGE BASE:
@@ -145,6 +145,24 @@ def chat(conversation_id, user_message, user):
         response = chat_session.send_message(user_message)
 
         assistant_content = response.text
+        
+        # LLM-Based Source Filtering (Interim Regex Solution)
+        # Check which [Source X] tags were actually cited in the response
+        if sources:
+            cited_indices = set()
+            matches = re.findall(r'\[Source (\d+)\]', assistant_content)
+            for m in matches:
+                try:
+                    cited_indices.add(int(m))
+                except ValueError:
+                    pass
+            
+            # Only keep the sources that were cited
+            filtered_sources = []
+            for i, src in enumerate(sources, 1):
+                if i in cited_indices:
+                    filtered_sources.append(src)
+            sources = filtered_sources
         
         # Extract token usage if available
         prompt_tokens = None

@@ -58,18 +58,34 @@ def semantic_search(query, user, top_k=None):
     threshold = settings.RAG_CONFIG.get('SIMILARITY_THRESHOLD', 0.50)
     max_distance = 1.0 - threshold
 
-    results = (
+    # Stage 1: Fetch candidate pool (top_k * 2)
+    candidate_pool_size = top_k * 2
+
+    results = list(
         Chunk.objects
         .filter(user=user)
         .annotate(distance=CosineDistance('embedding', query_embedding))
         .filter(distance__lte=max_distance)  # THRESHOLD FIX: Ignore irrelevant kachra
         .order_by('distance')  # closest first
-        [:top_k]
+        [:candidate_pool_size]
     )
 
-    # Step 3: Format results
+    # Stage 2: Re-rank using weighted scoring (Semantic 0.9 + Recency 0.1)
+    from django.utils import timezone
+    now = timezone.now()
+
     formatted = []
     for chunk in results:
+        similarity_score = 1.0 - float(chunk.distance)
+        
+        # Recency score calculation (0.0 to 1.0, where 1.0 is brand new)
+        age_days = (now - chunk.created_at).days
+        # Decay over 365 days, maxing at 1.0
+        recency_score = max(0.0, 1.0 - (age_days / 365.0))
+        
+        # Weighted formula
+        final_score = (similarity_score * 0.9) + (recency_score * 0.1)
+
         formatted.append({
             'chunk_id': chunk.id,
             'content': chunk.content,
@@ -78,11 +94,17 @@ def semantic_search(query, user, top_k=None):
             'source_id': chunk.object_id,
             'chunk_index': chunk.chunk_index,
             'metadata': chunk.metadata,
+            'created_at': chunk.created_at.strftime('%d %b %Y'),
             'distance': round(float(chunk.distance), 4),
-            'score': round(1 - float(chunk.distance), 4),  # convert to similarity score
+            'score': round(similarity_score, 4),  # Pure semantic score
+            'final_score': round(final_score, 4), # Re-ranking score
         })
 
-    logger.info(f"Found {len(formatted)} results")
+    # Sort by final_score descending and take top_k
+    formatted.sort(key=lambda x: x['final_score'], reverse=True)
+    formatted = formatted[:top_k]
+
+    logger.info(f"Found {len(formatted)} results after re-ranking")
     return formatted
 
 
@@ -106,7 +128,7 @@ def get_context_for_chat(query, user, top_k=5):
     sources = []
 
     for i, result in enumerate(results, 1):
-        source_label = f"[Source {i}: {result['source_title']}"
+        source_label = f"[Source {i}: {result['source_title']} (Added: {result['created_at']})"
         if result['metadata'].get('page_num'):
             source_label += f", Page {result['metadata']['page_num']}"
         source_label += "]"
