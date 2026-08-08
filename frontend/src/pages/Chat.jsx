@@ -6,16 +6,24 @@ import remarkGfm from 'remark-gfm';
 import remarkBreaks from 'remark-breaks';
 import {
     Send, Plus, MessageSquare, Trash2, Loader2, Bot, User,
-    FileText, StickyNote, ExternalLink, ChevronRight, Sparkles
+    FileText, StickyNote, ExternalLink, ChevronRight, Sparkles,
+    Copy, Check
 } from 'lucide-react';
 
 export default function Chat() {
     const [message, setMessage] = useState('');
     const [activeConversationId, setActiveConversationId] = useState(null);
     const [messages, setMessages] = useState([]);
+    const [copiedId, setCopiedId] = useState(null);
     const messagesEndRef = useRef(null);
     const inputRef = useRef(null);
     const queryClient = useQueryClient();
+
+    const handleCopy = (id, content) => {
+        navigator.clipboard.writeText(content);
+        setCopiedId(id);
+        setTimeout(() => setCopiedId(null), 2000);
+    };
 
     // Fetch conversation list
     const { data: conversations = [] } = useQuery({
@@ -213,9 +221,24 @@ export default function Chat() {
 
                                     {/* Content */}
                                     <div className="flex-1 min-w-0">
-                                        <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            {msg.role === 'user' ? 'You' : 'MindForge AI'}
-                                        </span>
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                {msg.role === 'user' ? 'You' : 'MindForge AI'}
+                                            </span>
+                                            {msg.role === 'assistant' && (
+                                                <button
+                                                    onClick={() => handleCopy(msg.id || idx, msg.content)}
+                                                    className="p-1 text-gray-500 hover:text-white transition-colors rounded"
+                                                    title="Copy response"
+                                                >
+                                                    {copiedId === (msg.id || idx) ? (
+                                                        <Check size={14} className="text-emerald-400" />
+                                                    ) : (
+                                                        <Copy size={14} />
+                                                    )}
+                                                </button>
+                                            )}
+                                        </div>
                                         <div className="mt-1 text-gray-200 text-sm leading-relaxed prose prose-invert prose-sm max-w-none">
                                             <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
                                                 {msg.content}

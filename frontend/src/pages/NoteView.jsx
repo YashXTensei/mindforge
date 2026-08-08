@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchNote, updateNote, fetchCategories, fetchTags } from '../api/notes';
+import { triggerProcessing } from '../api/rag';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkBreaks from 'remark-breaks';
-import { ArrowLeft, Edit2, Save, X, Trash2 } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { ArrowLeft, Edit2, Save, X, Sparkles, Loader2 } from 'lucide-react';
 
 export default function NoteView() {
     const { id } = useParams();
@@ -23,7 +25,14 @@ export default function NoteView() {
     // Fetch Note Data
     const { data: note, isLoading, isError } = useQuery({
         queryKey: ['note', id],
-        queryFn: () => fetchNote(id)
+        queryFn: () => fetchNote(id),
+        refetchInterval: (query) => {
+            const data = query.state?.data;
+            if (data && ['pending', 'extracting', 'chunking', 'embedding'].includes(data.processing_status)) {
+                return 3000;
+            }
+            return false;
+        }
     });
 
     // Fetch Categories & Tags for Edit Mode
@@ -47,6 +56,18 @@ export default function NoteView() {
             queryClient.invalidateQueries(['notes']);
             setIsEditing(false); // Wapas Read Mode me jao
         }
+    });
+
+    // AI Processing
+    const processMutation = useMutation({
+        mutationFn: () => triggerProcessing('note', id),
+        onSuccess: (data) => {
+            toast.success(data.message || 'Note queued for AI processing!');
+            queryClient.invalidateQueries(['note', id]);
+        },
+        onError: () => {
+            toast.error('Failed to process note');
+        },
     });
 
     if (isLoading) return <div className="text-white p-10">Loading note...</div>;
@@ -74,9 +95,38 @@ export default function NoteView() {
                 </button>
                 
                 {!isEditing ? (
-                    <button onClick={() => setIsEditing(true)} className="bg-gray-800 border-none text-white py-2 px-4 rounded-md cursor-pointer flex items-center gap-2 hover:bg-gray-700 transition-colors">
-                        <Edit2 size={16} /> Edit Note
-                    </button>
+                    <div className="flex gap-2.5">
+                        {(() => {
+                            const isProcessing = processMutation.isPending || ['pending', 'extracting', 'chunking', 'embedding'].includes(note.processing_status);
+                            const isReady = note.processing_status === 'completed';
+
+                            return (
+                                <button
+                                    onClick={() => processMutation.mutate()}
+                                    disabled={isProcessing || isReady}
+                                    className={`border-none py-2 px-4 rounded-md cursor-pointer flex items-center gap-2 transition-colors text-sm
+                                        ${isReady
+                                            ? 'bg-emerald-500/15 text-emerald-400 cursor-default'
+                                            : isProcessing
+                                                ? 'bg-amber-500/15 text-amber-400 cursor-not-allowed'
+                                                : 'bg-purple-500/15 text-purple-400 hover:bg-purple-500/25'
+                                        }
+                                        disabled:opacity-50`}
+                                >
+                                    {isProcessing ? (
+                                        <><Loader2 size={14} className="animate-spin" /> Processing...</>
+                                    ) : isReady ? (
+                                        <><Sparkles size={14} /> AI Ready</>
+                                    ) : (
+                                        <><Sparkles size={14} /> Process with AI</>
+                                    )}
+                                </button>
+                            );
+                        })()}
+                        <button onClick={() => setIsEditing(true)} className="bg-gray-800 border-none text-white py-2 px-4 rounded-md cursor-pointer flex items-center gap-2 hover:bg-gray-700 transition-colors">
+                            <Edit2 size={16} /> Edit Note
+                        </button>
+                    </div>
                 ) : (
                     <div className="flex gap-2.5">
                         <button onClick={() => setIsEditing(false)} className="bg-gray-800 border-none text-white py-2 px-4 rounded-md cursor-pointer flex items-center gap-2 hover:bg-gray-700 transition-colors">

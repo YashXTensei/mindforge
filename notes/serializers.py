@@ -12,6 +12,7 @@ class NoteSerializer(serializers.ModelSerializer):
         model = Note
         fields = [
             'id', 'title', 'content', 'category', 'category_detail',
-            'tags', 'tags_detail', 'is_pinned', 'created_at', 'updated_at'
+            'tags', 'tags_detail', 'is_pinned', 'processing_status',
+            'created_at', 'updated_at'
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'processing_status', 'created_at', 'updated_at']

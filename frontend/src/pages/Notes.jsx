@@ -231,7 +231,7 @@ export default function Notes() {
                         }
                     </p>
                 ) : (
-                    <div className={`flex flex-col gap-4 ${!selectedNote ? 'max-w-4xl' : ''}`}>
+                    <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 ${!selectedNote ? 'max-w-5xl' : ''}`}>
                         {notes?.map((note) => (
                             <NoteCard 
                                 key={note.id}

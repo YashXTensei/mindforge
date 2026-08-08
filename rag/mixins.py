@@ -1,6 +1,7 @@
 from django.db import models
 
 class ProcessingStatus(models.TextChoices):
+    UNPROCESSED = 'unprocessed', 'Unprocessed'
     PENDING = 'pending', 'Pending'
     EXTRACTING = 'extracting', 'Extracting Text'
     CHUNKING = 'chunking', 'Chunking'
@@ -12,7 +13,7 @@ class ProcessingMixin(models.Model):
     processing_status = models.CharField(
         max_length=20,
         choices=ProcessingStatus.choices,
-        default=ProcessingStatus.PENDING,
+        default=ProcessingStatus.UNPROCESSED,
     )
     error_message = models.TextField(blank=True, default='')
     retry_count = models.IntegerField(default=0)
