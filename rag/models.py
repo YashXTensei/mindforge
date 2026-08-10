@@ -2,7 +2,7 @@ from django.db import models
 from django.conf import settings
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
-from pgvector.django import VectorField
+from pgvector.django import VectorField, HnswIndex
 
 class Chunk(models.Model):
     # Generic relation to Document or Note
@@ -29,6 +29,13 @@ class Chunk(models.Model):
         indexes = [
             models.Index(fields=['content_type', 'object_id']),
             models.Index(fields=['user']),
+            HnswIndex(
+                name='chunk_embedding_hnsw_idx',
+                fields=['embedding'],
+                m=16,
+                ef_construction=64,
+                opclasses=['vector_cosine_ops'],
+            ),
         ]
 
     def __str__(self):

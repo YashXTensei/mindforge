@@ -209,3 +209,39 @@ def reprocess_failed():
 
     logger.info(f"Requeued {count} failed items for reprocessing")
     return count
+
+
+@shared_task
+def cleanup_stuck_processing():
+    """
+    Safety net: Reset items stuck in processing states for > 1 hour.
+    If a Celery worker crashes mid-processing (OOM, deploy, etc.),
+    the document/note stays in 'extracting'/'chunking'/'embedding' forever.
+    This task finds those orphans and marks them as 'failed' so they
+    can be retried by reprocess_failed or manually by the user.
+    """
+    from datetime import timedelta
+    from django.utils import timezone
+    from vault.models import Document
+    from notes.models import Note
+
+    cutoff = timezone.now() - timedelta(hours=1)
+    stuck_statuses = ['extracting', 'chunking', 'embedding', 'pending']
+
+    stuck_docs = Document.objects.filter(
+        processing_status__in=stuck_statuses,
+        updated_at__lt=cutoff,
+    )
+    stuck_notes = Note.objects.filter(
+        processing_status__in=stuck_statuses,
+        updated_at__lt=cutoff,
+    )
+
+    doc_count = stuck_docs.update(processing_status='failed', error_message='Stuck in processing for >1 hour (auto-reset)')
+    note_count = stuck_notes.update(processing_status='failed', error_message='Stuck in processing for >1 hour (auto-reset)')
+
+    total = doc_count + note_count
+    if total > 0:
+        logger.warning(f"Reset {total} stuck items (docs={doc_count}, notes={note_count})")
+    return total
+

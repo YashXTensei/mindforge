@@ -1,8 +1,25 @@
 import axios from 'axios';
 
 const API = axios.create({
-    baseURL: 'http://127.0.0.1:8000/api',
+    baseURL: import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api',
 });
+
+// -------------------------
+// Token Refresh Queue (prevents concurrent 401 race condition)
+// -------------------------
+let isRefreshing = false;
+let failedQueue = [];
+
+const processQueue = (error, token = null) => {
+    failedQueue.forEach(prom => {
+        if (error) {
+            prom.reject(error);
+        } else {
+            prom.resolve(token);
+        }
+    });
+    failedQueue = [];
+};
 
 // -------------------------
 // Request Interceptor
@@ -38,14 +55,26 @@ API.interceptors.response.use(
             !originalRequest._retry
         ) {
 
+            // If already refreshing, queue this request
+            if (isRefreshing) {
+                return new Promise((resolve, reject) => {
+                    failedQueue.push({ resolve, reject });
+                }).then(token => {
+                    originalRequest.headers.Authorization = `Bearer ${token}`;
+                    return API(originalRequest);
+                }).catch(err => Promise.reject(err));
+            }
+
             originalRequest._retry = true;
+            isRefreshing = true;
 
             try {
 
                 const refresh = localStorage.getItem('refresh_token');
+                const refreshUrl = `${import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api'}/auth/token/refresh/`;
 
                 const response = await axios.post(
-                    'http://127.0.0.1:8000/api/auth/token/refresh/',
+                    refreshUrl,
                     {
                         refresh: refresh,
                     }
@@ -61,10 +90,14 @@ API.interceptors.response.use(
                 originalRequest.headers.Authorization =
                     `Bearer ${newAccess}`;
 
+                processQueue(null, newAccess);
+
                 // Original request dobara bhejo
                 return API(originalRequest);
 
             } catch (refreshError) {
+
+                processQueue(refreshError, null);
 
                 // Refresh bhi fail
                 localStorage.removeItem('access_token');
@@ -73,6 +106,8 @@ API.interceptors.response.use(
                 window.location.href = '/login';
 
                 return Promise.reject(refreshError);
+            } finally {
+                isRefreshing = false;
             }
         }
 
