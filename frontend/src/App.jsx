@@ -1,8 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import Register from './pages/Register';
-import Login from './pages/Login';
+import Register from './pages/register';
+import Login from './pages/login';
 import Layout from './components/Layout';
-import Notes from './pages/notes';
+import Notes from './pages/Notes';
 import Profile from './pages/Profile';
 import Dashboard from './pages/Dashboard';
 import Vault from './pages/Vault';
