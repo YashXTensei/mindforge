@@ -9,6 +9,7 @@ import Vault from './pages/Vault';
 import Search from './pages/Search';
 import NoteView from './pages/NoteView';
 import Chat from './pages/Chat';
+import About from './pages/About';
 
 import { Toaster } from 'react-hot-toast';
 
@@ -31,6 +32,7 @@ function App() {
                     <Route path="/profile" element={<Profile />} />
                     <Route path="/notes/:id" element={<NoteView />} />
                     <Route path="/chat" element={<Chat />} />
+                    <Route path="/about" element={<About />} />
                 </Route>
             </Routes>
         </BrowserRouter>

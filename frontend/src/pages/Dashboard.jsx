@@ -138,60 +138,106 @@ export default function Dashboard() {
                 />
             </div>
 
-            {/* Main Content Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+            {/* Empty State OR Main Content Grid */}
+            {(!loadingNotes && !loadingDocs && !loadingRes && 
+              notes?.length === 0 && documents?.length === 0 && resources?.length === 0) ? (
                 
-                {/* Recent Notes */}
-                <div className="flex flex-col gap-4">
-                    <div className="flex justify-between items-end border-b border-gray-800 pb-2">
-                        <h2 className="text-xl font-semibold text-white m-0">Recent Notes</h2>
-                        <Link to="/notes" className="text-sm text-accent hover:text-accent-dark no-underline">View all</Link>
+                <div className="bg-surface-card border border-border rounded-xl p-8 sm:p-12 mb-12 flex flex-col items-center text-center animate-fade-in relative overflow-hidden">
+                    {/* Background decoration */}
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-accent/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+                    <div className="absolute bottom-0 left-0 w-48 h-48 bg-[#4ECDC4]/5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2 pointer-events-none"></div>
+                    
+                    <div className="w-16 h-16 bg-accent/10 rounded-2xl flex items-center justify-center mb-6 border border-accent/20">
+                        <Sparkles size={32} className="text-accent" />
                     </div>
-                    {loadingNotes ? <ListSkeleton /> : errNotes ? (
-                        <div className="text-red-400 p-4 border border-red-900/50 rounded-lg bg-red-900/10 text-sm">Failed to load notes.</div>
-                    ) : recentNotes.length === 0 ? (
-                        <div className="text-gray-500 text-sm p-4 text-center border border-dashed border-gray-700 rounded-lg">No notes yet.</div>
-                    ) : (
-                        <div className="flex flex-col gap-2">
-                            {recentNotes.map(note => (
-                                <ListItem 
-                                    key={note.id} 
-                                    title={(note.is_pinned ? '📌 ' : '') + note.title} 
-                                    date={note.updated_at} 
-                                    onClick={() => navigate(`/notes/${note.id}`)}
-                                    icon={<FileText size={16} />}
-                                />
-                            ))}
+                    
+                    <h2 className="text-3xl font-bold text-white mb-4">Welcome to MindForge</h2>
+                    <p className="text-gray-400 text-lg max-w-2xl mb-10">
+                        Your intelligent personal knowledge base. MindForge doesn't just store your information — it lets you interact with it. Search, connect, and ask AI questions directly against your own documents and notes.
+                    </p>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 w-full max-w-4xl text-left">
+                        <div className="p-6 rounded-xl bg-background border border-border flex flex-col gap-3 relative overflow-hidden group">
+                            <div className="absolute top-0 left-0 w-1 h-full bg-[#A076F9] opacity-50 group-hover:opacity-100 transition-opacity"></div>
+                            <Upload size={24} className="text-[#A076F9]" />
+                            <h3 className="text-white font-semibold text-lg">1. Upload Documents</h3>
+                            <p className="text-sm text-gray-500">Add PDFs, images, or files. We'll extract the text and generate vector embeddings automatically.</p>
+                            <button onClick={() => navigate('/vault?upload=true')} className="mt-auto pt-4 text-[#A076F9] text-sm font-medium hover:underline text-left cursor-pointer bg-transparent border-none p-0 w-max">Go to Vault &rarr;</button>
                         </div>
-                    )}
+
+                        <div className="p-6 rounded-xl bg-background border border-border flex flex-col gap-3 relative overflow-hidden group">
+                            <div className="absolute top-0 left-0 w-1 h-full bg-[#4ECDC4] opacity-50 group-hover:opacity-100 transition-opacity"></div>
+                            <FileText size={24} className="text-[#4ECDC4]" />
+                            <h3 className="text-white font-semibold text-lg">2. Write Notes</h3>
+                            <p className="text-sm text-gray-500">Jot down ideas, thoughts, or summaries. Your notes are fully searchable and available to the AI.</p>
+                            <button onClick={() => navigate('/notes?new=true')} className="mt-auto pt-4 text-[#4ECDC4] text-sm font-medium hover:underline text-left cursor-pointer bg-transparent border-none p-0 w-max">Create a Note &rarr;</button>
+                        </div>
+
+                        <div className="p-6 rounded-xl bg-background border border-border flex flex-col gap-3 relative overflow-hidden group">
+                            <div className="absolute top-0 left-0 w-1 h-full bg-[#FF6B6B] opacity-50 group-hover:opacity-100 transition-opacity"></div>
+                            <Sparkles size={24} className="text-[#FF6B6B]" />
+                            <h3 className="text-white font-semibold text-lg">3. Ask AI</h3>
+                            <p className="text-sm text-gray-500">Chat with your knowledge base. The AI will instantly search your vault to answer your questions.</p>
+                            <button onClick={() => navigate('/chat')} className="mt-auto pt-4 text-[#FF6B6B] text-sm font-medium hover:underline text-left cursor-pointer bg-transparent border-none p-0 w-max">Start Chatting &rarr;</button>
+                        </div>
+                    </div>
                 </div>
 
-                {/* Recent Documents */}
-                <div className="flex flex-col gap-4">
-                    <div className="flex justify-between items-end border-b border-gray-800 pb-2">
-                        <h2 className="text-xl font-semibold text-white m-0">Recent Documents</h2>
-                        <Link to="/vault" className="text-sm text-accent hover:text-accent-dark no-underline">View vault</Link>
-                    </div>
-                    {loadingDocs ? <ListSkeleton /> : errDocs ? (
-                        <div className="text-red-400 p-4 border border-red-900/50 rounded-lg bg-red-900/10 text-sm">Failed to load documents.</div>
-                    ) : recentDocs.length === 0 ? (
-                        <div className="text-gray-500 text-sm p-4 text-center border border-dashed border-gray-700 rounded-lg">No documents yet.</div>
-                    ) : (
-                        <div className="flex flex-col gap-2">
-                            {recentDocs.map(doc => (
-                                <ListItem 
-                                    key={doc.id} 
-                                    title={doc.title} 
-                                    date={doc.created_at} // documents use created_at often, but fallback to updated_at if needed
-                                    onClick={() => navigate('/vault')}
-                                    icon={<Files size={16} />}
-                                />
-                            ))}
+            ) : (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+                    
+                    {/* Recent Notes */}
+                    <div className="flex flex-col gap-4">
+                        <div className="flex justify-between items-end border-b border-gray-800 pb-2">
+                            <h2 className="text-xl font-semibold text-white m-0">Recent Notes</h2>
+                            <Link to="/notes" className="text-sm text-accent hover:text-accent-dark no-underline">View all</Link>
                         </div>
-                    )}
-                </div>
+                        {loadingNotes ? <ListSkeleton /> : errNotes ? (
+                            <div className="text-red-400 p-4 border border-red-900/50 rounded-lg bg-red-900/10 text-sm">Failed to load notes.</div>
+                        ) : recentNotes.length === 0 ? (
+                            <div className="text-gray-500 text-sm p-4 text-center border border-dashed border-gray-700 rounded-lg">No notes yet.</div>
+                        ) : (
+                            <div className="flex flex-col gap-2">
+                                {recentNotes.map(note => (
+                                    <ListItem 
+                                        key={note.id} 
+                                        title={(note.is_pinned ? '📌 ' : '') + note.title} 
+                                        date={note.updated_at} 
+                                        onClick={() => navigate(`/notes/${note.id}`)}
+                                        icon={<FileText size={16} />}
+                                    />
+                                ))}
+                            </div>
+                        )}
+                    </div>
 
-            </div>
+                    {/* Recent Documents */}
+                    <div className="flex flex-col gap-4">
+                        <div className="flex justify-between items-end border-b border-gray-800 pb-2">
+                            <h2 className="text-xl font-semibold text-white m-0">Recent Documents</h2>
+                            <Link to="/vault" className="text-sm text-accent hover:text-accent-dark no-underline">View vault</Link>
+                        </div>
+                        {loadingDocs ? <ListSkeleton /> : errDocs ? (
+                            <div className="text-red-400 p-4 border border-red-900/50 rounded-lg bg-red-900/10 text-sm">Failed to load documents.</div>
+                        ) : recentDocs.length === 0 ? (
+                            <div className="text-gray-500 text-sm p-4 text-center border border-dashed border-gray-700 rounded-lg">No documents yet.</div>
+                        ) : (
+                            <div className="flex flex-col gap-2">
+                                {recentDocs.map(doc => (
+                                    <ListItem 
+                                        key={doc.id} 
+                                        title={doc.title} 
+                                        date={doc.created_at} // documents use created_at often, but fallback to updated_at if needed
+                                        onClick={() => navigate('/vault')}
+                                        icon={<Files size={16} />}
+                                    />
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                </div>
+            )}
 
             {/* Quick Actions (Sticky on Mobile, Static on Desktop) */}
             <div className="fixed bottom-0 left-0 right-0 sm:static bg-background/80 sm:bg-transparent backdrop-blur-md sm:backdrop-blur-none border-t border-border sm:border-none p-4 sm:p-0 z-10">
