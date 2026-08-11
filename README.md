@@ -26,18 +26,14 @@ MindForge is an AI-powered personal knowledge base and operating system. It goes
 
 
 1. **Dashboard**
-2. 
    <img width="1917" height="1077" alt="Screenshot 2026-08-11 162539" src="https://github.com/user-attachments/assets/323a6fa8-9ec7-42b7-b665-5713698bf823" />
 
 
-3. **AI Chat with RAG**
-4. 
+2. **AI Chat with RAG**
    <img width="1917" height="970" alt="Screenshot 2026-08-11 191016" src="https://github.com/user-attachments/assets/d8bcb165-9803-4a5c-b010-0c776f972f72" />
 
 
-
-5. **About Page**
-6. 
+3. **About Page**
    <img width="1917" height="1077" alt="Screenshot 2026-08-11 162436" src="https://github.com/user-attachments/assets/b408efb3-093b-4a6e-9880-313d3c9bf826" />
 
 
