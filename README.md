@@ -1,99 +1,189 @@
-# 🧠 MindForge AI
+<div align="center">
+  <img src="frontend/public/favicon.jpg" alt="MindForge Logo" width="120" height="120" style="border-radius: 20px;" />
+  
+  # MindForge 🧠
+  **Your Intelligent Second Brain**
+  
+  [![Live Demo](https://img.shields.io/badge/Live_Demo-MindForge-8A2BE2?style=for-the-badge&logo=vercel)](https://mindforge-gamma.vercel.app/)
+  [![Django](https://img.shields.io/badge/Django-092E20?style=for-the-badge&logo=django&logoColor=green)](https://www.djangoproject.com/)
+  [![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactjs.org/)
+  [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+</div>
 
-> A Personal AI Operating System and Knowledge Vault.
+<br/>
 
-MindForge is an advanced Retrieval-Augmented Generation (RAG) platform that acts as your second brain. It allows you to upload documents, write notes, and save resources into a unified vault. Using vector search and generative AI, you can chat with your entire knowledge base instantly.
+MindForge is an AI-powered personal knowledge base and operating system. It goes beyond simple note-taking by allowing you to **interact** with your knowledge. Upload documents, write notes, and use the integrated AI to semantically search, synthesize, and chat directly with your own data.
+
+## 🌟 Live Demo
+
+**Experience MindForge:** [mindforge-gamma.vercel.app](https://mindforge-gamma.vercel.app/)
+
+*(Note: The backend is hosted on Heroku Eco Dynos. If it's asleep, the first request might take 5-10 seconds to wake up!)*
+
+---
+
+## 📸 Screenshots
+
+*(Add your actual screenshots here! You can drag and drop them directly into the GitHub editor)*
+
+1. **Dashboard**
+   ![Dashboard](<!-- Paste Dashboard URL here -->)
+
+2. **AI Chat with RAG**
+   ![AI Chat](<!-- Paste AI Chat URL here -->)
+
+3. **About Page**
+   ![About](<!-- Paste About URL here -->)
 
 ---
 
 ## ✨ Key Features
 
-- **Document Processing (OCR & NLP):** Upload PDFs and images. MindForge automatically extracts text (using Gemini Vision), chunks it, and generates vector embeddings.
-- **Smart RAG Pipeline:** Combines Cosine Distance vector search (HNSW index via `pgvector`) with a recency-decay ranking algorithm to retrieve the most relevant and up-to-date context.
-- **AI Chat:** Converse naturally with your knowledge base. The AI cites exact sources when using your data, and falls back to general knowledge when needed.
-- **Unified Knowledge Vault:** Organize text notes, uploaded files, and external web resources with tags and categories.
-- **Background Processing:** Heavy tasks (extraction, embedding generation) run asynchronously via Celery and Redis to keep the UI lightning fast.
-- **Data Privacy & Isolation:** Strict tenant isolation at the vector database level ensures that users only ever search over their own data chunks.
+- **Document Vault (RAG Pipeline):** Upload PDFs and images. MindForge automatically extracts text, chunks it intelligently, and generates high-dimensional vector embeddings using Cohere.
+- **Semantic Search:** Don't just search for exact keywords. Find notes and documents by their *meaning* using PostgreSQL's `pgvector` HNSW index.
+- **Smart Notes:** Write, format, and organize your thoughts with Markdown support.
+- **AI Chat (Gemini 3.6 Flash):** Chat directly with your vault. The AI retrieves relevant context from your documents and cites its sources when answering.
+- **Background Processing:** Heavy tasks (like embedding generation and text extraction) are offloaded to Celery & Redis workers to keep the UI buttery smooth.
+- **🔐 JWT Authentication & User Isolation:** Secure, token-based authentication ensuring your knowledge base is completely private.
+- **🔎 Global Search:** Instantly search across all your notes, documents, and resources in one place.
+- **🏷️ Categories & Tags:** Organize your notes effectively with customizable categories and tagging system.
 
-## 🏗️ Architecture Stack
+---
 
-### Backend
-- **Framework:** Django (Python) + Django REST Framework
-- **Database:** PostgreSQL + `pgvector` extension
-- **Background Workers:** Celery + Redis
-- **File Storage:** Cloudinary (Production) / Local Filesystem (Dev)
-- **AI Models:** Cohere (`embed-english-v3.0`), Google Gemini (`3.6-flash`, Vision)
+## 🏗️ Architecture
+
+```text
+                    MindForge
+                       │
+              ┌────────┴────────┐
+              │                 │
+          Vercel             Heroku
+        React + Vite      Django + DRF
+                              │
+             ┌────────────────┼───────────────┐
+             │                │               │
+         PostgreSQL         Redis          Cloudinary
+          + pgvector         │                 (Media)
+             │             Celery
+             │                │
+             └────── RAG ─────┘
+                    │
+               Cohere + Gemini
+```
+
+---
+
+## 🛠️ Tech Stack
 
 ### Frontend
-- **Framework:** React + Vite
-- **Data Fetching:** TanStack React Query + Axios
-- **Styling:** Vanilla CSS & Tailwind CSS styling concepts
-- **Icons:** Lucide React
+- **Framework:** React 19 + Vite
+- **Styling:** Tailwind CSS + Lucide Icons
+- **State/Fetching:** TanStack React Query + Axios
+- **Deployment:** Vercel
 
-## 🚀 Local Setup
+### Backend
+- **Framework:** Django + Django REST Framework
+- **Database:** PostgreSQL (with `pgvector` extension for semantic search)
+- **Task Queue:** Celery + Redis
+- **AI/LLMs:** Cohere (Embeddings) + Google Gemini (Chat Generation)
+- **Storage:** Cloudinary (for PDFs and Images)
+- **Deployment:** Heroku (Web + Worker Eco Dynos)
 
-### 1. Prerequisites
-- Python 3.12+
+---
+
+## 📂 Project Structure
+
+```text
+mindforge/
+├── accounts/      # User authentication and management
+├── notes/         # Note creation, tagging, and categories
+├── vault/         # Document upload, storage, and resource links
+├── rag/           # RAG pipeline, chunking, embeddings, and chat
+├── search/        # Global search and semantic search APIs
+├── config/        # Main Django configuration and routing
+├── frontend/      # React Vite application
+│   └── src/
+├── manage.py      # Django CLI
+├── requirements.txt # Python dependencies
+└── Procfile       # Heroku deployment configuration
+```
+
+---
+
+## 🚀 Local Development Setup
+
+Want to run MindForge locally? Follow these steps:
+
+### Prerequisites
+- Python 3.11+
 - Node.js 18+
-- Docker Desktop (for Postgres and Redis)
+- PostgreSQL (with `pgvector` installed locally)
+- Redis server running locally
 
-### 2. Backend Setup
+### 1. Backend Setup
 ```bash
-# Clone repository
+# Clone the repo
 git clone https://github.com/YashXTensei/mindforge.git
-cd MindForge
+cd mindforge
 
-# Create virtual environment and install dependencies
+# Create virtual environment
 python -m venv venv
-.\venv\Scripts\activate  # On Windows
+
+# Activate virtual environment
+# On Windows PowerShell:
+.\venv\Scripts\Activate.ps1
+# On Windows CMD:
+venv\Scripts\activate
+# On macOS / Linux:
+source venv/bin/activate
+
+# Install dependencies
 pip install -r requirements.txt
 
-# Setup Environment Variables
-cp .env.example .env
-# Fill in your GEMINI_API_KEY and COHERE_API_KEY in the .env file
-
-# Start Database and Redis via Docker
-docker-compose up -d
-
-# Run Migrations
+# Run migrations and start server
 python manage.py migrate
-python manage.py createsuperuser
-
-# Start the Django server and Celery worker
 python manage.py runserver
-# In a new terminal:
-celery -A config worker -l info
+```
+
+### 2. Background Workers (Celery)
+In a new terminal window (with the venv activated):
+```bash
+celery -A config worker -l info --pool=solo
 ```
 
 ### 3. Frontend Setup
+In a third terminal window:
 ```bash
 cd frontend
 npm install
-
-# Start the Vite development server
 npm run dev
 ```
 
-## 🌍 Production Deployment
-
-MindForge is built to be deployed on Heroku (Backend) and Vercel (Frontend). 
-
-### Backend (Heroku)
-1. Provision a Heroku App with **Essential-0 Postgres** and **Mini Redis** addons.
-2. Ensure you subscribe to **Eco Dynos** to scale your web and worker processes.
-3. Configure `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET` for persistent media storage.
-4. Deploy using `git push heroku main`.
-
-### Frontend (Vercel)
-1. Import the `/frontend` directory to Vercel.
-2. Set the `VITE_API_URL` environment variable to your Heroku app domain (e.g., `https://your-app.herokuapp.com/api`).
-3. Deploy!
-
-## 🛡️ Security
-
-- **Rate Limiting:** Global rate limiting is applied via DRF ScopedRateThrottle to prevent AI API abuse.
-- **Token Rotation:** Stateless authentication utilizing JWT (JSON Web Tokens) with automatic transparent token refresh via Axios interceptors.
-- **Production Headers:** HSTS, Secure Cookies, X-Frame-Options Deny, and SSL proxy forwarding enabled automatically when `DEBUG=False`.
+The frontend will be available at `http://localhost:5173`.
 
 ---
-*Built with ❤️ for knowledge management and AI exploration.*
+
+## 🔐 Environment Variables
+
+You'll need a `.env` file in the root backend directory to run the project. Use `.env.example` as a template and provide your own credentials for:
+- PostgreSQL database
+- Redis cache
+- Cloudinary (Media storage)
+- Cohere API (Embeddings)
+- Google Gemini API (LLM)
+
+---
+
+## 👨‍💻 About the Creator
+
+Built with curiosity, caffeine, and an unreasonable number of commits by **Yash Mittal**. 
+
+- **Codeforces:** [YashXCoder](https://codeforces.com/profile/YashXCoder)
+- **GitHub:** [@YashXTensei](https://github.com/YashXTensei)
+- **LinkedIn:** [Yash Mittal](https://www.linkedin.com/in/yash-mittal-5a0b77382/)
+
+---
+
+<div align="center">
+  <i><b>MindForge 1.0.0 — The first public release</b></i>
+</div>
