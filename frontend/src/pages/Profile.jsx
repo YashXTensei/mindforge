@@ -43,10 +43,10 @@ export default function Profile() {
     }
 
     return (
-        <div className="max-w-4xl mx-auto p-4 sm:p-8 animate-fade-in pb-24">
+        <div className="max-w-6xl mx-auto p-4 sm:p-8 animate-fade-in pb-24">
             <h1 className="text-3xl font-bold text-white mb-8">Your Profile</h1>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-12 lg:gap-20">
                 
                 {/* Left Column: User Info & Stats */}
                 <div className="flex flex-col gap-8">
@@ -144,7 +144,7 @@ export default function Profile() {
                             <div className="flex items-center gap-3 text-sm">
                                 <Award size={16} className="text-[#FFD700]" />
                                 <span className="text-gray-400 w-24">Codeforces:</span>
-                                <span className="text-gray-200 font-medium">1500+ rating</span>
+                                <a href="https://codeforces.com/profile/YashXCoder" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">YashXCoder</a>
                             </div>
                             <div className="flex items-center gap-3 text-sm">
                                 <Code size={16} className="text-gray-400" />
@@ -154,7 +154,7 @@ export default function Profile() {
                             <div className="flex items-center gap-3 text-sm">
                                 <UserCircle size={16} className="text-[#0A66C2]" />
                                 <span className="text-gray-400 w-24">LinkedIn:</span>
-                                <a href="#" className="text-accent hover:underline">Yash Mittal</a>
+                                <a href="https://www.linkedin.com/in/yash-mittal-5a0b77382/" target="_blank" className="text-accent hover:underline">Yash Mittal</a>
                             </div>
                         </div>
 
