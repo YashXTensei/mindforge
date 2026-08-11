@@ -1,7 +1,7 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import API from '../api/axios';
-import { User, Mail, Calendar, Github, Linkedin, Code2, Heart, Award, FileText, Database, Link as LinkIcon } from 'lucide-react';
+import { User, Mail, Calendar, Code, UserCircle, Code2, Heart, Award, FileText, Database, Link as LinkIcon } from 'lucide-react';
 import { fetchNotes } from '../api/notes';
 import { fetchDocuments, fetchResources } from '../api/vault';
 
@@ -147,12 +147,12 @@ export default function Profile() {
                                 <span className="text-gray-200 font-medium">1500+ rating</span>
                             </div>
                             <div className="flex items-center gap-3 text-sm">
-                                <Github size={16} className="text-gray-400" />
+                                <Code size={16} className="text-gray-400" />
                                 <span className="text-gray-400 w-24">GitHub:</span>
                                 <a href="https://github.com/YashXTensei" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">@YashXTensei</a>
                             </div>
                             <div className="flex items-center gap-3 text-sm">
-                                <Linkedin size={16} className="text-[#0A66C2]" />
+                                <UserCircle size={16} className="text-[#0A66C2]" />
                                 <span className="text-gray-400 w-24">LinkedIn:</span>
                                 <a href="#" className="text-accent hover:underline">Yash Mittal</a>
                             </div>
