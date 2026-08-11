@@ -68,11 +68,10 @@ export default function About() {
                 <h2 className="text-2xl font-semibold text-white mb-6">What's Coming</h2>
                 
                 <div className="mb-6">
-                    <h3 className="text-lg font-medium text-accent mb-2">MindForge 2.0</h3>
+                    <h3 className="text-lg font-medium text-accent mb-2">MindForge 2.0 (Phase 4)</h3>
                     <ul className="list-disc list-inside text-gray-400 space-y-2 ml-2">
-                        <li>Enhanced UI customizations and theming</li>
-                        <li>Advanced tag management and filtering</li>
-                        <li>Improved AI chat memory and context persistence</li>
+                        <li><strong>AI Learning Tools:</strong> Auto-generate flashcards, summaries, and quizzes from your documents.</li>
+                        <li><strong>AI Agent System:</strong> Allow the AI to take actions on your behalf (e.g., "create a note", "organize my vault").</li>
                     </ul>
                 </div>
 
