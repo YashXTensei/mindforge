@@ -3,7 +3,8 @@ import { useQuery } from '@tanstack/react-query';
 import { fetchNotes } from '../api/notes';
 import { fetchDocuments, fetchResources } from '../api/vault';
 import { FileText, Files, Link as LinkIcon, Sparkles, Plus, Upload, Clock, AlertCircle } from 'lucide-react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import API from '../api/axios';
 
 // --- Helpers ---
 const timeAgo = (dateStr) => {
@@ -23,6 +24,11 @@ const getGreeting = () => {
     if (hour < 12) return 'Good morning';
     if (hour < 18) return 'Good afternoon';
     return 'Good evening';
+};
+
+const fetchUserProfile = async () => {
+    const response = await API.get('/auth/me/');
+    return response.data;
 };
 
 // --- Skeletons ---
@@ -49,6 +55,11 @@ export default function Dashboard() {
     const greeting = useMemo(() => getGreeting(), []);
 
     // --- Parallel Queries ---
+    const { data: userProfile } = useQuery({
+        queryKey: ['userProfile'],
+        queryFn: fetchUserProfile,
+    });
+
     const { data: notes, isLoading: loadingNotes, isError: errNotes } = useQuery({
         queryKey: ['notes', {}],
         queryFn: () => fetchNotes({})
@@ -106,7 +117,7 @@ export default function Dashboard() {
         <div className="max-w-6xl mx-auto p-4 sm:p-8 animate-fade-in pb-24">
             {/* Header */}
             <div className="mb-10">
-                <h1 className="text-3xl font-bold text-white mb-2">{greeting}, Yash 👋</h1>
+                <h1 className="text-3xl font-bold text-white mb-2">{greeting}, {userProfile?.username || 'User'} 👋</h1>
                 <p className="text-gray-400 text-lg">Here's what's in your knowledge base.</p>
             </div>
 
