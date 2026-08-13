@@ -10,6 +10,22 @@ import { NoteForm } from '../components/notes/NoteForm';
 import { DetailPanel } from '../components/ui/DetailPanel';
 import { NoteDetail } from '../components/notes/NoteDetail';
 
+const NoteSkeleton = () => (
+    <div className="bg-surface-card rounded-lg border border-border p-4 h-[120px] animate-pulse flex flex-col justify-between">
+        <div className="space-y-3">
+            <div className="h-5 bg-gray-700 rounded w-3/4"></div>
+            <div className="h-4 bg-gray-800 rounded w-1/2"></div>
+        </div>
+        <div className="flex justify-between items-end mt-4">
+            <div className="flex gap-2">
+                <div className="h-6 w-16 bg-gray-800 rounded-full"></div>
+                <div className="h-6 w-16 bg-gray-800 rounded-full"></div>
+            </div>
+            <div className="h-4 w-12 bg-gray-800 rounded"></div>
+        </div>
+    </div>
+);
+
 export default function Notes() {
     const queryClient = useQueryClient(); 
     
@@ -147,8 +163,7 @@ export default function Notes() {
     // --- Rendering ---
     // isLoading sirf FIRST time true hota hai. isFetching har bar true hota hai (background fetch).
     // keepPreviousData ki wajah se isLoading false rehta hai jab purana data available ho.
-    if (isLoading) return <div className="text-white">Loading notes... ⏳</div>;
-    if (isError) return <div className="text-red-400">Error fetching notes! ❌</div>;
+    if (isError) return <div className="text-red-400 p-8">Error fetching notes! ❌</div>;
 
     return (
         <div className="flex h-full gap-0 animate-fade-in">
@@ -223,7 +238,11 @@ export default function Notes() {
                 />
 
                 {/* Notes List */}
-                {notes?.length === 0 ? (
+                {isLoading ? (
+                    <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 ${!selectedNote ? 'max-w-5xl' : ''}`}>
+                        {[1, 2, 3, 4, 5, 6].map(i => <NoteSkeleton key={i} />)}
+                    </div>
+                ) : notes?.length === 0 ? (
                     <p className="text-gray-400">
                         {(selectedCategory || selectedTags.length > 0)
                             ? 'No notes found for this filter. Try changing or clearing the filters! 🔍'
