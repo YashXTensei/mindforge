@@ -39,7 +39,20 @@ def process_document(self, document_id):
         # ── Step 1: Extract Text ──
         doc.update_status('extracting')
 
-        pages = extract_text_from_file(doc.file.path)
+        import tempfile
+        import os
+        
+        # Download file to a local temp path to support remote Cloudinary storage
+        ext = os.path.splitext(doc.file.name)[1]
+        with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as temp_file:
+            temp_file.write(doc.file.read())
+            temp_file_path = temp_file.name
+
+        try:
+            pages = extract_text_from_file(temp_file_path)
+        finally:
+            if os.path.exists(temp_file_path):
+                os.remove(temp_file_path)
 
         if not pages:
             doc.mark_completed()
