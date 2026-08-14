@@ -4,7 +4,7 @@
   # MindForge 🧠
   **Your Intelligent Second Brain**
   
-  [![Live Demo](https://img.shields.io/badge/Live_Demo-MindForge-8A2BE2?style=for-the-badge&logo=vercel)](https://mindforge-gamma.vercel.app/)
+  [![Live Demo](https://img.shields.io/badge/Live_Demo-MindForge-8A2BE2?style=for-the-badge&logo=vercel)](https://mindtensei.me/)
   [![Django](https://img.shields.io/badge/Django-092E20?style=for-the-badge&logo=django&logoColor=green)](https://www.djangoproject.com/)
   [![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactjs.org/)
   [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
@@ -16,7 +16,7 @@ MindForge is an AI-powered personal knowledge base and operating system. It goes
 
 ## 🌟 Live Demo
 
-**Experience MindForge:** [mindforge-gamma.vercel.app](https://mindforge-gamma.vercel.app/)
+**Experience MindForge:** [mindtensei.me](https://mindtensei.me/)
 
 *(Note: The backend is hosted on Heroku Eco Dynos. If it's asleep, the first request might take 5-10 seconds to wake up!)*
 

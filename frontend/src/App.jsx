@@ -20,7 +20,7 @@ function App() {
             <Toaster position="top-right" />
             <Routes>
                 {/* Public Routes (Bina Layout ke) */}
-                <Route path="/" element={<Navigate to="/login" replace />} />
+                <Route path="/" element={<Navigate to="/dashboard" replace />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/login" element={<Login />} />
 

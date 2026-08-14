@@ -1,10 +1,16 @@
-import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
+import { Outlet, Link, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { LayoutDashboard, StickyNote, LogOut, User, Archive, Search, Bot, Info } from 'lucide-react';
 import { Button } from './ui/Button';
 
 export default function Layout() {
     const navigate = useNavigate();
     const location = useLocation();
+
+    // Check if user is logged in
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+        return <Navigate to="/login" replace />;
+    }
 
     const handleLogout = () => {
         if (window.confirm("Are you sure you want to logout?")) {
