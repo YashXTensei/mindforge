@@ -46,11 +46,20 @@ class DocumentSerializer(serializers.ModelSerializer): # Name changed
 
     def to_representation(self, instance):
         ret = super().to_representation(instance)
-        # Cloudinary sometimes drops the extension. Append it so the browser knows it's a PDF.
+        # Generate a signed Cloudinary URL so the browser can access restricted files
         if ret.get('file') and 'cloudinary.com' in ret['file'] and instance.original_filename:
+            import cloudinary.utils
             ext = os.path.splitext(instance.original_filename)[1].lower()
-            if not ret['file'].endswith(ext):
-                ret['file'] = f"{ret['file']}{ext}"
+            public_id = instance.file.name
+            signed_url, _ = cloudinary.utils.cloudinary_url(
+                public_id,
+                resource_type="image",
+                type="upload",
+                sign_url=True,
+            )
+            if ext and not signed_url.lower().endswith(ext):
+                signed_url += ext
+            ret['file'] = signed_url
         return ret
 
 

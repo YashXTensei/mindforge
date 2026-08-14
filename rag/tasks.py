@@ -44,12 +44,27 @@ def process_document(self, document_id):
         import requests
         
         # Download file to a local temp path to support remote Cloudinary storage
-        ext = os.path.splitext(doc.original_filename)[1] if doc.original_filename else os.path.splitext(doc.file.name)[1]
+        ext = os.path.splitext(doc.original_filename)[1].lower() if doc.original_filename else os.path.splitext(doc.file.name)[1].lower()
         
         file_url = doc.file.url
-        # Cloudinary needs the extension to serve PDFs properly
-        if 'cloudinary.com' in file_url and not file_url.lower().endswith(ext.lower()):
-            file_url += ext.lower()
+        
+        # Cloudinary's free plan blocks unauthenticated access.
+        # Use the Cloudinary SDK to generate a signed URL for download.
+        if 'cloudinary.com' in file_url:
+            import cloudinary.utils
+            # Extract the public_id from the stored file name
+            public_id = doc.file.name
+            # Determine resource_type: 'image' for MediaCloudinaryStorage
+            signed_url, _ = cloudinary.utils.cloudinary_url(
+                public_id,
+                resource_type="image",
+                type="upload",
+                sign_url=True,
+            )
+            if ext and not signed_url.lower().endswith(ext):
+                signed_url += ext
+            file_url = signed_url
+            logger.info(f"Using signed Cloudinary URL for doc {doc.id}")
 
         with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as temp_file:
             response = requests.get(file_url)
