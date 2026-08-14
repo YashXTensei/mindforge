@@ -41,11 +41,20 @@ def process_document(self, document_id):
 
         import tempfile
         import os
+        import requests
         
         # Download file to a local temp path to support remote Cloudinary storage
-        ext = os.path.splitext(doc.file.name)[1]
+        ext = os.path.splitext(doc.original_filename)[1] if doc.original_filename else os.path.splitext(doc.file.name)[1]
+        
+        file_url = doc.file.url
+        # Cloudinary needs the extension to serve PDFs properly
+        if 'cloudinary.com' in file_url and not file_url.lower().endswith(ext.lower()):
+            file_url += ext.lower()
+
         with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as temp_file:
-            temp_file.write(doc.file.read())
+            response = requests.get(file_url)
+            response.raise_for_status()
+            temp_file.write(response.content)
             temp_file_path = temp_file.name
 
         try:
