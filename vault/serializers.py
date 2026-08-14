@@ -44,6 +44,15 @@ class DocumentSerializer(serializers.ModelSerializer): # Name changed
         validated_data['file_size'] = uploaded_file.size
         return super().create(validated_data)
 
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        # Cloudinary sometimes drops the extension. Append it so the browser knows it's a PDF.
+        if ret.get('file') and 'cloudinary.com' in ret['file'] and instance.original_filename:
+            ext = os.path.splitext(instance.original_filename)[1].lower()
+            if not ret['file'].endswith(ext):
+                ret['file'] = f"{ret['file']}{ext}"
+        return ret
+
 
 class ResourceSerializer(serializers.ModelSerializer):
     category_detail = CategorySerializer(source='category', read_only=True)
