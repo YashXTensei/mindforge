@@ -48,16 +48,16 @@ def process_document(self, document_id):
         
         file_url = doc.file.url
         
-        # Cloudinary's free plan blocks unauthenticated access.
+        # Cloudinary's free plan blocks unauthenticated access for raw files.
         # Use the Cloudinary SDK to generate a signed URL for download.
         if 'cloudinary.com' in file_url:
             import cloudinary.utils
             # Extract the public_id from the stored file name
             public_id = doc.file.name
-            # Determine resource_type: 'image' for MediaCloudinaryStorage
+            # Determine resource_type: 'raw' for RawMediaCloudinaryStorage
             signed_url, _ = cloudinary.utils.cloudinary_url(
                 public_id,
-                resource_type="image",
+                resource_type="raw",
                 type="upload",
                 sign_url=True,
             )

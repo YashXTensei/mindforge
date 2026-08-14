@@ -53,7 +53,7 @@ class DocumentSerializer(serializers.ModelSerializer): # Name changed
             public_id = instance.file.name
             signed_url, _ = cloudinary.utils.cloudinary_url(
                 public_id,
-                resource_type="image",
+                resource_type="raw",
                 type="upload",
                 sign_url=True,
             )
