@@ -179,7 +179,7 @@ Deploy at this point. You have: Auth + Notes + Knowledge Vault + RAG Chat + Sour
 
 {deployment process : 9th august 2026 to 10th august 2026}
 
-{deployed with custom domain on 14th auguest 2026 https://www.mindtensei.me}
+{deployed with custom domain on 14th august 2026 https://www.mindtensei.me}
 
 # Phase 4 — AI Learning Layer
 
