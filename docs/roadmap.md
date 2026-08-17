@@ -1,6 +1,6 @@
 # MindForge Roadmap (Revised)
 
-> Last Updated: 23 June 2026
+> Last Updated: 17 August 2026
 
 ## Vision
 
@@ -181,145 +181,165 @@ Deploy at this point. You have: Auth + Notes + Knowledge Vault + RAG Chat + Sour
 
 {deployed with custom domain on 14th august 2026 https://www.mindtensei.me}
 
-# Phase 4 — AI Learning Layer
+# Phase 4 — Proactive Learning Engine ⭐
 
 **Time: 3-4 weeks**
 
+> MindForge starts *managing* your learning, not just storing it.
+
 ## Goal
 
-Build context-aware learning tools on top of RAG.
+Build a spaced repetition engine with adaptive, context-aware review sessions. The system auto-extracts topics from uploaded content and proactively schedules reviews.
 
 ## Features
 
-- **AI Summaries**: Generate summary + key takeaways from any note/PDF
-- **Flashcard Generator**: Auto-generate flashcards from content
-- **Quiz Generator**: MCQs + short-answer questions
-- **Topic Extraction**: Auto-detect topics from uploaded content
+- **Auto Topic Extraction**: Integrated into existing Celery pipeline — when a document is chunked and embedded, Gemini also extracts 3-5 key topics and creates `TopicMastery` records automatically. Zero new buttons, topics appear on their own.
+- **Spaced Repetition (SM-2)**: Algorithmically calculate the exact day a user is likely to forget a topic. Intervals grow on correct answers (1→3→7→21→60 days), reset on incorrect.
+- **Daily Review**: Dashboard shows due topics. One click → focused adaptive review session.
+- **Adaptive Question Generation**: AI adjusts difficulty based on `confidence_level` and targets `weak_sub_concepts` specifically.
+- **"Why Am I Reviewing This?" Context**: Every question explains why it's being asked — generated from TopicMastery metadata, not the LLM.
+- **Difficulty Adaptation**: Low confidence → easier fundamental questions. High confidence → harder edge-case questions.
+- **Weak Sub-Concept Targeting**: If user aces "useState" but fails "useEffect dependencies", questions zoom into the weak area.
+- **Review History & Performance**: Every session persisted with score, per-item results, timestamps.
+
+## NOT in this phase
+
+- ❌ Standalone Flashcard Generator (wrapper)
+- ❌ Generic AI Quiz Generator (wrapper)
+- ❌ AI Summaries on demand (wrapper)
 
 ## What You'll Learn
 
-- Advanced prompt engineering (structured JSON output)
-- AI pipelines (content → chunks → LLM → structured output)
-- Output parsing and validation
-- Interactive UI (flip cards, quiz interface)
-- Cost optimization (caching AI outputs)
+- Spaced repetition algorithms (SM-2 — how Anki works)
+- Structured JSON output from LLMs (Gemini `response_schema`)
+- Extending existing Celery pipelines
+- User modeling and state management
+- Interactive quiz-style UI with adaptive difficulty
 
 ## Project Value: 8.5/10
 
 ## Exit Criteria
 
-- [ ] Summary generation works for notes and PDFs
-- [ ] Flashcards generate and render with flip animation
-- [ ] Quiz generates with correct/incorrect feedback
-- [ ] AI outputs are cached
+- [ ] Document upload auto-extracts topics and creates TopicMastery records
+- [ ] SM-2 algorithm correctly schedules next_review_date
+- [ ] Daily Review generates adaptive questions with difficulty scaling
+- [ ] "Why am I reviewing this?" context is accurate and human-readable
+- [ ] Weak sub-concepts are tracked and specifically targeted
+- [ ] Review history is persisted and queryable
 
 ---
 
-# Phase 5 — Learning Memory ⭐⭐
+# Phase 5 — Knowledge Graph & Connections ⭐⭐
 
-**Time: 4 weeks**
+**Time: 3 weeks**
 
-> Core Differentiator — this is what makes MindForge unique.
+> MindForge shows you the *shape* of your knowledge.
 
 ## Goal
 
-Track what the user knows, what they're forgetting, and what they should revise.
+Build an interactive visual knowledge graph that maps how topics and documents relate to each other, overlaid with mastery data from Phase 4.
 
 ## Features
 
-- **Learning Profile**: Topic confidence scores, revision counts, last revised dates
-- **Knowledge Decay Detection**: Spaced repetition (SM-2 algorithm) to flag forgotten topics
-- **Weak Topic Detection**: Low quiz scores, rarely revised topics
-- **Personalized Suggestions**: "Revise DP this week", "You're strong in React but weak in System Design"
-- **Learning Dashboard**: Confidence heatmap, revision timeline, weak areas
+- **Automatic Relationship Detection**: During topic extraction, also extract relationships between topics (e.g., "Django" ↔ "Celery" via "Task Queues")
+- **Interactive Knowledge Graph (D3.js)**: Force-directed graph where nodes = topics, color = mastery level (red→yellow→green), size = source document count, edges = detected relationships
+- **Knowledge Clusters**: Topics auto-group into clusters ("Frontend", "Backend", "DevOps")
+- **Blind Spot Detection**: Highlights isolated nodes and unexplored clusters — "You have 3 documents about System Design but haven't reviewed any of them."
 
 ## What You'll Learn
 
-- Spaced repetition algorithms (SM-2 — how Anki works)
-- User modeling and personalization
-- Data analytics and aggregation
-- Data visualization (Recharts/Chart.js)
-- Recommendation system basics
+- D3.js force-directed graphs (or react-force-graph)
+- Graph data structures and traversal
+- Relationship extraction via LLM
+- Interactive data visualization
+- Frontend performance with large datasets
 
 ## Project Value: 9.0/10
 
 ## Exit Criteria
 
-- [ ] Learning profile tracks all studied topics with confidence
-- [ ] Decay detection flags stale knowledge
-- [ ] Suggestions feel relevant and personalized
-- [ ] Dashboard visualizes learning progress
+- [ ] Topic relationships are auto-detected during document processing
+- [ ] Interactive graph renders with mastery-colored nodes
+- [ ] Clicking a node shows detailed mastery info and source documents
+- [ ] Blind spots are highlighted visually
+- [ ] Graph performs well with 50+ nodes
 
 ---
 
-# Phase 6 — AI Actions + Goals/Tasks
+# Phase 6 — Learning Analytics & Intelligence Dashboard ⭐⭐
 
-**Time: 3-4 weeks**
+**Time: 3 weeks**
 
-> Core Differentiator — AI doesn't just chat, it acts.
+> MindForge tells you *how* you learn, not just *what* you learned.
 
 ## Goal
 
-Natural language commands that manage the workspace. Goals and Tasks enter here, managed by AI.
+Build a data-driven analytics dashboard that surfaces insights from accumulated review data.
 
 ## Features
 
-- **Goals & Tasks**: Create goals with milestones, tasks with deadlines/priorities
-- **AI Actions via natural language**:
-  - "Create a React learning roadmap" → creates goal + tasks
-  - "Mark React Basics completed" → updates goal progress
-  - "Move all Django resources to Backend" → performs action
-  - "Create a reminder for CF Round on Saturday" → creates event
-- **Confirmation Flow**: AI shows preview → user confirms → action executes
-- **Undo Support**: Actions are reversible
+- **Learning Velocity Chart**: Topics mastered per week/month over time
+- **Personalized Forgetting Curve**: Actual Ebbinghaus curve per topic based on real review data
+- **Knowledge Coverage Map**: Treemap/sunburst showing mastered vs. stored knowledge by category
+- **Strength & Weakness Report**: Ranked topics by accuracy, with specific weak sub-concepts
+- **Weekly Learning Report**: Auto-generated via Celery Beat — topics reviewed, scores, trends, suggested focus areas
+- **Study Pattern Insights**: Time-of-day/day-of-week performance analysis ("Your accuracy is 23% higher on weekday mornings")
 
 ## What You'll Learn
 
-- LLM function calling / tool calling
-- Intent classification (question vs. command)
-- Confirmation flows (preview → confirm → execute → undo)
-- AI agent architecture
+- Data visualization (Recharts / Chart.js / D3.js)
+- Aggregation queries (Django ORM annotate, aggregate, window functions)
+- Celery Beat for scheduled tasks
+- Statistical analysis (rolling averages, trend detection)
+- Dashboard UI design
 
-## Project Value: 9.5/10
+## Project Value: 9.0/10
 
 ## Exit Criteria
 
-- [ ] At least 5 AI actions work end-to-end
-- [ ] Goal/task CRUD works via UI and AI commands
-- [ ] AI distinguishes questions from commands
-- [ ] Actions are reversible
+- [ ] Learning velocity chart renders with real data
+- [ ] Forgetting curve is personalized per topic
+- [ ] Coverage map shows mastered vs. stored knowledge
+- [ ] Weekly report generates automatically via Celery Beat
+- [ ] Study pattern analysis produces actionable insights
 
 ---
 
-# Phase 7 — Daily Brief + Timeline
+# Phase 7 — Study Planner & Daily Brief
 
-**Time: 2 weeks**
+**Time: 2-3 weeks**
+
+> MindForge plans your learning and holds you accountable.
 
 ## Goal
 
-Make MindForge feel alive and build personal growth history.
+Allow users to set learning goals with deadlines. MindForge analyzes the vault, creates a study plan grounded in actual content, and tracks progress using spaced repetition data from Phase 4.
 
 ## Features
 
-- **Daily Brief**: "Good Morning Yash — 4 pending tasks, React 72% complete, DP needs revision"
-- **Weekly Report**: Tasks completed, PDFs studied, revision sessions, progress trends
-- **AI Timeline**: Auto-generated milestones from goals and achievements
+- **Goal Creation**: Title, target date — MindForge auto-links relevant vault documents and topics via semantic similarity
+- **AI Study Plan Generation**: Week-by-week schedule distributing topics across remaining time, prioritized by lowest confidence first, prerequisites before advanced
+- **Progress Tracking**: Progress bar based on actual TopicMastery confidence levels, not manual checkboxes
+- **Adaptive Rescheduling**: Falls behind → redistributes topics. Gets ahead → suggests deeper review
+- **Daily Brief**: On login — "Good morning! This week's focus: 'Load Balancing' and 'Caching Strategies'. You have 3 topics due for review."
 
 ## What You'll Learn
 
-- Aggregation queries and analytics
-- AI-generated reports from structured data
-- Scheduled tasks (Celery Beat)
-- Timeline UI components
+- Goal/milestone data modeling
+- AI planning with constraints (content + time + mastery data)
+- Progress tracking and adaptive algorithms
+- Celery Beat for daily briefs
+- Integrating multiple data sources into unified UX
 
 ## Project Value: 9.5/10 (Final)
 
 ## Exit Criteria
 
-- [ ] Daily brief generates automatically
-- [ ] Weekly report summarizes real data
-- [ ] Timeline shows meaningful milestones
-- [ ] Everything deployed and working
+- [ ] User can create a goal and auto-link relevant vault content
+- [ ] AI generates week-by-week study plan from real content
+- [ ] Progress is tracked via actual mastery data
+- [ ] Plan adapts when user falls behind or gets ahead
+- [ ] Daily brief combines goals + reviews into one actionable message
 
 ---
 
@@ -333,10 +353,10 @@ Week 10-15    → Phase 3 (RAG Engine)
                 ═══════════════════════
                   MIP DEPLOYED (~3.5 months)
                 ═══════════════════════
-Week 16-19    → Phase 4 (AI Learning Layer)
-Week 20-23    → Phase 5 (Learning Memory)
-Week 24-27    → Phase 6 (AI Actions)
-Week 28-29    → Phase 7 (Brief + Timeline)
+Week 16-19    → Phase 4 (Proactive Learning Engine)
+Week 20-22    → Phase 5 (Knowledge Graph)
+Week 23-25    → Phase 6 (Learning Analytics)
+Week 26-28    → Phase 7 (Study Planner & Brief)
                 ═══════════════════════
                   FULL PRODUCT (~7 months)
                 ═══════════════════════
@@ -353,7 +373,7 @@ Week 28-29    → Phase 7 (Brief + Timeline)
 | Git + GitHub | Every phase |
 | Environment variables | Phase 0 |
 | Basic CI (GitHub Actions) | Phase 1 |
-| Deploy to Railway/Render | Phase 3 (MIP) |
+| Deploy to Heroku/Vercel | Phase 3 (MIP) |
 
 ---
 
@@ -361,11 +381,12 @@ Week 28-29    → Phase 7 (Brief + Timeline)
 
 A successful MindForge should allow users to:
 
-- Store knowledge
-- Search knowledge semantically
-- Learn from knowledge (summaries, flashcards, quizzes)
-- Chat with knowledge (RAG with source citations)
-- Act on knowledge (AI actions)
-- Build long-term learning memory (decay detection, revision tracking)
+- Store knowledge (notes, PDFs, resources)
+- Search knowledge semantically (RAG + pgvector)
+- Talk to knowledge (AI chat with source citations)
+- Be proactively quizzed on decaying knowledge (spaced repetition)
+- See the shape of their knowledge (interactive knowledge graph)
+- Understand their learning patterns (analytics dashboard)
+- Plan and track learning goals (study planner + daily brief)
 
 without leaving a single workspace.
