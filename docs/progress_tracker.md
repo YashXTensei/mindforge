@@ -74,4 +74,6 @@ This document tracks everything built in MindForge, what remains to be built, an
 - **Custom Exception Handler:** Created `config/exceptions.py` for user-friendly throttle error messages.
 - **Centralized Config:** All rate limits stored in `RATE_LIMITS` dict in `settings.py`.
 
+### August 18, 2026 :- Added "Learning" app
+
 proxy commits count : 4
