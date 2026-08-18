@@ -229,79 +229,79 @@ Build a spaced repetition engine with adaptive, context-aware review sessions. T
 
 ---
 
-# Phase 5 — Knowledge Graph & Connections ⭐⭐
+# Phase 5 — Knowledge Compiler & Graph ⭐⭐
 
-**Time: 3 weeks**
+**Time: 3-4 weeks**
 
-> MindForge shows you the *shape* of your knowledge.
+> MindForge doesn't just store knowledge — it *compiles* it into a structured, queryable intelligence.
 
 ## Goal
 
-Build an interactive visual knowledge graph that maps how topics and documents relate to each other, overlaid with mastery data from Phase 4.
+Transform raw text (chunks, embeddings) into a structured knowledge representation: Topics → Claims → Relationships → Prerequisites → Evidence. Then visualize it as an interactive knowledge graph with gap analysis.
 
 ## Features
 
-- **Automatic Relationship Detection**: During topic extraction, also extract relationships between topics (e.g., "Django" ↔ "Celery" via "Task Queues")
-- **Interactive Knowledge Graph (D3.js)**: Force-directed graph where nodes = topics, color = mastery level (red→yellow→green), size = source document count, edges = detected relationships
-- **Knowledge Clusters**: Topics auto-group into clusters ("Frontend", "Backend", "DevOps")
-- **Blind Spot Detection**: Highlights isolated nodes and unexplored clusters — "You have 3 documents about System Design but haven't reviewed any of them."
+- **Knowledge Compiler**: When content is processed, extract not just topics but structured **claims** with evidence. Example: Claim: "useEffect runs after render" → Evidence: React docs (page 3), your note (July 12), uploaded lecture PDF.
+- **Prerequisite Chain Detection**: Auto-detect prerequisite relationships. "You can't understand useEffect without understanding component lifecycle." Stored as directed edges in the topic graph.
+- **Interactive Knowledge Graph (D3.js)**: Force-directed graph where nodes = topics, color = mastery level (red→yellow→green), size = source document count, directed edges = prerequisite/relationship links.
+- **Knowledge Gap Analysis**: User asks "What am I missing to understand distributed systems?" → MindForge traverses the prerequisite graph, checks mastery levels, finds missing nodes → "You understand replication and partitioning, but your graph shows a missing prerequisite between consensus and leader election."
+- **Blind Spot Detection**: Highlights topics with documents but zero reviews, isolated nodes with no connections, and prerequisite gaps blocking deeper understanding.
 
 ## What You'll Learn
 
+- Structured knowledge extraction via LLM (beyond simple topic tagging)
 - D3.js force-directed graphs (or react-force-graph)
-- Graph data structures and traversal
-- Relationship extraction via LLM
-- Interactive data visualization
-- Frontend performance with large datasets
+- Graph data structures, traversal, and prerequisite chain algorithms
+- Gap analysis on directed graphs (topological sorting, reachability)
+- Interactive data visualization with complex state
 
 ## Project Value: 9.0/10
 
 ## Exit Criteria
 
-- [ ] Topic relationships are auto-detected during document processing
-- [ ] Interactive graph renders with mastery-colored nodes
-- [ ] Clicking a node shows detailed mastery info and source documents
+- [ ] Knowledge Compiler extracts claims + evidence from documents
+- [ ] Prerequisite relationships are auto-detected between topics
+- [ ] Interactive graph renders with mastery-colored nodes and directed edges
+- [ ] Gap Analysis answers "What am I missing to understand X?" with real graph computation
 - [ ] Blind spots are highlighted visually
-- [ ] Graph performs well with 50+ nodes
 
 ---
 
-# Phase 6 — Learning Analytics & Intelligence Dashboard ⭐⭐
+# Phase 6 — Knowledge Intelligence ⭐⭐⭐
 
-**Time: 3 weeks**
+**Time: 3-4 weeks**
 
-> MindForge tells you *how* you learn, not just *what* you learned.
+> MindForge doesn't just retrieve — it **thinks** across your entire knowledge base.
 
 ## Goal
 
-Build a data-driven analytics dashboard that surfaces insights from accumulated review data.
+Build cross-document intelligence: contradiction detection, knowledge synthesis, and a learning analytics layer. MindForge proactively surfaces insights the user never asked for.
 
 ## Features
 
-- **Learning Velocity Chart**: Topics mastered per week/month over time
-- **Personalized Forgetting Curve**: Actual Ebbinghaus curve per topic based on real review data
-- **Knowledge Coverage Map**: Treemap/sunburst showing mastered vs. stored knowledge by category
-- **Strength & Weakness Report**: Ranked topics by accuracy, with specific weak sub-concepts
-- **Weekly Learning Report**: Auto-generated via Celery Beat — topics reviewed, scores, trends, suggested focus areas
-- **Study Pattern Insights**: Time-of-day/day-of-week performance analysis ("Your accuracy is 23% higher on weekday mornings")
+- **Contradiction Detection**: When new content is processed, compare its claims against existing claims in the knowledge base. If Document A says "X is always true" and Document B says "X is not necessarily true" → surface a Knowledge Conflict alert with both sources and context comparison.
+- **Cross-Document Synthesis**: Periodically (or on-demand), analyze relationships across documents from different uploads. Generate "Insight Cards" — "The Observer Pattern from your Design Patterns PDF is the same principle behind React's useEffect. Both are about subscribing to state changes."
+- **Learning Analytics Dashboard**: Learning velocity chart (topics mastered per week), personalized forgetting curves per topic, strength/weakness rankings, knowledge coverage map (mastered vs. just stored), study pattern insights (time-of-day performance analysis).
+- **Weekly Intelligence Report**: Auto-generated via Celery Beat — new contradictions found, new connections discovered, topics decaying, suggested focus areas, learning velocity trend.
 
 ## What You'll Learn
 
-- Data visualization (Recharts / Chart.js / D3.js)
+- Semantic similarity for contradiction/overlap detection (cosine similarity between claim embeddings)
+- Cross-document reasoning via LLM with structured context
+- Data visualization (Recharts / D3.js)
 - Aggregation queries (Django ORM annotate, aggregate, window functions)
-- Celery Beat for scheduled tasks
-- Statistical analysis (rolling averages, trend detection)
-- Dashboard UI design
+- Celery Beat for scheduled intelligence tasks
+- Designing proactive notification systems
 
-## Project Value: 9.0/10
+## Project Value: 9.5/10
 
 ## Exit Criteria
 
-- [ ] Learning velocity chart renders with real data
-- [ ] Forgetting curve is personalized per topic
-- [ ] Coverage map shows mastered vs. stored knowledge
-- [ ] Weekly report generates automatically via Celery Beat
-- [ ] Study pattern analysis produces actionable insights
+- [ ] Contradiction Detection surfaces real conflicts between documents with source citations
+- [ ] Cross-Document Synthesis generates meaningful insight cards connecting different uploads
+- [ ] Learning velocity chart and forgetting curves render with real data
+- [ ] Weekly Intelligence Report generates automatically and contains actionable insights
+- [ ] System proactively surfaces insights without the user asking
 
 ---
 
@@ -354,9 +354,9 @@ Week 10-15    → Phase 3 (RAG Engine)
                   MIP DEPLOYED (~3.5 months)
                 ═══════════════════════
 Week 16-19    → Phase 4 (Proactive Learning Engine)
-Week 20-22    → Phase 5 (Knowledge Graph)
-Week 23-25    → Phase 6 (Learning Analytics)
-Week 26-28    → Phase 7 (Study Planner & Brief)
+Week 20-23    → Phase 5 (Knowledge Compiler & Graph)
+Week 24-27    → Phase 6 (Knowledge Intelligence)
+Week 28-30    → Phase 7 (Study Planner & Brief)
                 ═══════════════════════
                   FULL PRODUCT (~7 months)
                 ═══════════════════════
@@ -385,8 +385,14 @@ A successful MindForge should allow users to:
 - Search knowledge semantically (RAG + pgvector)
 - Talk to knowledge (AI chat with source citations)
 - Be proactively quizzed on decaying knowledge (spaced repetition)
-- See the shape of their knowledge (interactive knowledge graph)
-- Understand their learning patterns (analytics dashboard)
+- See the shape of their knowledge (interactive knowledge graph with prerequisite chains)
+- Ask "What am I missing?" and get real gap analysis (knowledge compiler)
+- Be alerted to contradictions across documents (knowledge intelligence)
+- Discover connections they never saw (cross-document synthesis)
+- Understand their learning patterns (analytics + weekly intelligence reports)
 - Plan and track learning goals (study planner + daily brief)
 
 without leaving a single workspace.
+
+> The system gets smarter the longer you use it. That's what separates MindForge from "upload a PDF to ChatGPT."
+
