@@ -123,6 +123,30 @@ def process_document(self, document_id):
 
         Chunk.objects.bulk_create(chunk_objects)
 
+        # ── Step 5: Extract Topics for Learning Engine (Phase 4) ──
+        # This step is independent of the RAG pipeline.
+        # If it fails, we still mark the document as completed
+        # because chunks are already saved and search/chat will work.
+        try:
+            from learning.generation import extract_topics_from_text
+            from learning.services import save_topics_for_content
+
+            # Combine chunk texts to give Gemini enough context
+            # We use the first ~15000 chars (handled inside extract_topics_from_text)
+            full_text = ' '.join(chunk_texts)
+            
+            topics = extract_topics_from_text(full_text)
+            
+            if topics:
+                saved = save_topics_for_content(doc.user, doc, topics)
+                logger.info(f"Document {doc.id}: {len(saved)} topics extracted: {topics}")
+            else:
+                logger.info(f"Document {doc.id}: No topics extracted")
+                
+        except Exception as topic_err:
+            # Topic extraction is a "nice to have" — don't fail the whole pipeline
+            logger.warning(f"Document {doc.id}: Topic extraction failed (non-fatal): {topic_err}")
+
         # ── Done! ──
         doc.mark_completed()
         logger.info(f"Document {doc.id} processed: {len(chunk_objects)} chunks saved")
@@ -204,6 +228,23 @@ def process_note(self, note_id):
             ))
 
         Chunk.objects.bulk_create(chunk_objects)
+
+        # ── Step 5: Extract Topics for Learning Engine (Phase 4) ──
+        try:
+            from learning.generation import extract_topics_from_text
+            from learning.services import save_topics_for_content
+
+            full_text = ' '.join(chunk_texts)
+            topics = extract_topics_from_text(full_text)
+            
+            if topics:
+                saved = save_topics_for_content(note.user, note, topics)
+                logger.info(f"Note {note.id}: {len(saved)} topics extracted: {topics}")
+            else:
+                logger.info(f"Note {note.id}: No topics extracted")
+                
+        except Exception as topic_err:
+            logger.warning(f"Note {note.id}: Topic extraction failed (non-fatal): {topic_err}")
 
         # ── Done! ──
         note.mark_completed()
