@@ -225,9 +225,11 @@ Build a spaced repetition engine with adaptive, context-aware review sessions. T
 - [ ] Daily Review generates adaptive questions with difficulty scaling
 - [ ] "Why am I reviewing this?" context is accurate and human-readable
 - [ ] Weak sub-concepts are tracked and specifically targeted
-- [ ] Review history is persisted and queryable
+- [x] Review history is persisted and queryable
 
 ---
+
+✅done {date : 25th august 2026}
 
 # Phase 5 — Knowledge Compiler & Graph ⭐⭐
 
