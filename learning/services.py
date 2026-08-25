@@ -46,9 +46,18 @@ def save_topics_for_content(user, content_object, topics: list[str]) -> list[Top
     get_or_create handles this: if it exists, just fetch it. If not, create it.
     """
     # Get the ContentType for the source object (Document or Note)
-    # ContentType is Django's way of saying "what model is this object from?"
-    # It lets us link TopicSource to ANY model (Document, Note, etc.) without hardcoding.
     content_type = ContentType.objects.get_for_model(content_object)
+    
+    # ── FIX 1: Re-upload protection ──
+    # If this document/note already has topics extracted, skip to avoid duplicates
+    existing_sources = TopicSource.objects.filter(
+        content_type=content_type,
+        object_id=content_object.id,
+    ).count()
+    
+    if existing_sources > 0:
+        logger.info(f"Topics already extracted for {content_type.model} {content_object.id}, skipping")
+        return []
     
     saved_masteries = []
     
@@ -58,28 +67,46 @@ def save_topics_for_content(user, content_object, topics: list[str]) -> list[Top
         
         if not topic_name:
             continue
-            
-        # get_or_create returns a tuple: (object, was_it_created?)
-        # If "React Hooks" already exists for this user, it returns the existing one.
-        # If not, it creates a new one with the defaults we specify.
-        mastery, created = TopicMastery.objects.get_or_create(
-            user=user,
-            topic_name=topic_name,
-            defaults={
-                'next_review_date': date.today(),  # Review immediately (first time)
-                'confidence_level': 0.0,
-                'easiness_factor': 2.5,             # SM-2 default
-                'review_interval_days': 1,
-            }
-        )
         
-        if created:
-            logger.info(f"New topic created: '{topic_name}' for user {user.username}")
+        # ── FIX 2: Smarter topic matching ──
+        # Instead of exact match, try case-insensitive match first
+        # This prevents "React Props And State" and "React Props Vs State" 
+        # from creating duplicates
+        existing_mastery = TopicMastery.objects.filter(
+            user=user,
+            topic_name__iexact=topic_name,
+        ).first()
+        
+        if not existing_mastery:
+            # Also try a "fuzzy" match: check if any existing topic CONTAINS 
+            # the core words (ignore common filler words like "and", "vs", "the", "of")
+            core_words = set(topic_name.lower().split()) - {'and', 'vs', 'the', 'of', 'in', 'a', 'an', 'for', 'with'}
+            if core_words:
+                for existing in TopicMastery.objects.filter(user=user):
+                    existing_core = set(existing.topic_name.lower().split()) - {'and', 'vs', 'the', 'of', 'in', 'a', 'an', 'for', 'with'}
+                    # If 80%+ of the words match, it's the same topic
+                    if core_words and existing_core:
+                        overlap = len(core_words & existing_core) / max(len(core_words), len(existing_core))
+                        if overlap >= 0.8:
+                            existing_mastery = existing
+                            logger.info(f"Fuzzy matched '{topic_name}' → '{existing.topic_name}'")
+                            break
+        
+        if existing_mastery:
+            mastery = existing_mastery
+            logger.info(f"Topic already exists: '{mastery.topic_name}' for user {user.username}, linking new source")
         else:
-            logger.info(f"Topic already exists: '{topic_name}' for user {user.username}, linking new source")
+            mastery = TopicMastery.objects.create(
+                user=user,
+                topic_name=topic_name,
+                next_review_date=date.today(),
+                confidence_level=0.0,
+                easiness_factor=2.5,
+                review_interval_days=1,
+            )
+            logger.info(f"New topic created: '{topic_name}' for user {user.username}")
         
         # Link this document/note as a source for this topic.
-        # unique_together on TopicSource prevents duplicate links.
         TopicSource.objects.get_or_create(
             topic=mastery,
             content_type=content_type,

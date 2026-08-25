@@ -49,6 +49,11 @@ class TopicMastery(models.Model):
     def __str__(self):
         return f"{self.topic_name} ({self.confidence_level:.0%}) - {self.user.username}"
 
+    def is_due_for_review(self):
+        """Returns True if this topic is due for review today or overdue."""
+        from datetime import date
+        return self.next_review_date <= date.today()
+
     @property
     def accuracy(self):
         """Returns accuracy percentage based on total reviews."""
@@ -105,6 +110,10 @@ class ReviewSession(models.Model):
     def __str__(self):
         status = "Completed" if self.completed_at else "In Progress"
         return f"Review {self.created_at.strftime('%Y-%m-%d')} - {status}"
+
+    @property
+    def is_completed(self):
+        return self.completed_at is not None
 
 
 class ReviewItem(models.Model):

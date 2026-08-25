@@ -32,10 +32,14 @@ function Login() {
             }, 1000)
 
         } catch (error) {
-            toast.error('Invalid username or password')
-            setIsLoading(false)
+            console.error('Login error:', error.response?.data);
+            const errorMsg = error.response?.data?.detail 
+                || error.response?.data?.error 
+                || 'Invalid username or password';
+            toast.error(errorMsg);
+            setIsLoading(false);
         }
-    }
+    };
 
     return (
         <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-4 relative overflow-hidden">

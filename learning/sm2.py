@@ -46,8 +46,12 @@ def update_sm2(mastery: TopicMastery, quality: int) -> None:
         # EF does not change on incorrect answers in this simplified implementation
         # (Though original SM-2 does decrease it slightly)
         
-    # 4. Update confidence level based on overall accuracy
-    mastery.confidence_level = min(1.0, mastery.accuracy)
+    # 4. Update confidence level
+    # Confidence = accuracy × experience_factor
+    # experience_factor ramps up gradually so you need multiple reviews to reach mastery.
+    # After 1 correct: ~17%, after 3: ~50%, after 5: ~83%, after 6+: can reach 100%
+    experience_factor = min(1.0, mastery.total_reviews / 6)
+    mastery.confidence_level = min(1.0, mastery.accuracy * experience_factor)
     
     # 5. Set timestamps
     mastery.last_reviewed = timezone.now()

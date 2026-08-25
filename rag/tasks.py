@@ -48,35 +48,46 @@ def process_document(self, document_id):
         
         file_url = doc.file.url
         
-        # Cloudinary's free plan blocks unauthenticated access for raw files.
-        # Use the Cloudinary SDK to generate a signed URL for download.
-        if 'cloudinary.com' in file_url:
-            import cloudinary.utils
-            # Extract the public_id from the stored file name
-            public_id = doc.file.name
-            # Determine resource_type: 'raw' for RawMediaCloudinaryStorage
-            signed_url, _ = cloudinary.utils.cloudinary_url(
-                public_id,
-                resource_type="raw",
-                type="upload",
-                sign_url=True,
-            )
-            if ext and not signed_url.lower().endswith(ext):
-                signed_url += ext
-            file_url = signed_url
-            logger.info(f"Using signed Cloudinary URL for doc {doc.id}")
+        # Check if file is stored locally (URL starts with /) or remotely (http/https)
+        if file_url.startswith('/'):
+            # LOCAL file — read directly from disk, no HTTP needed
+            try:
+                local_path = doc.file.path  # Django gives the absolute filesystem path
+                pages = extract_text_from_file(local_path)
+            except Exception as local_err:
+                logger.error(f"Document {doc.id}: Failed to read local file: {local_err}")
+                raise
+        else:
+            # REMOTE file (Cloudinary, S3, etc.) — download via HTTP
+            # Cloudinary's free plan blocks unauthenticated access for raw files.
+            # Use the Cloudinary SDK to generate a signed URL for download.
+            if 'cloudinary.com' in file_url:
+                import cloudinary.utils
+                # Extract the public_id from the stored file name
+                public_id = doc.file.name
+                # Determine resource_type: 'raw' for RawMediaCloudinaryStorage
+                signed_url, _ = cloudinary.utils.cloudinary_url(
+                    public_id,
+                    resource_type="raw",
+                    type="upload",
+                    sign_url=True,
+                )
+                if ext and not signed_url.lower().endswith(ext):
+                    signed_url += ext
+                file_url = signed_url
+                logger.info(f"Using signed Cloudinary URL for doc {doc.id}")
 
-        with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as temp_file:
-            response = requests.get(file_url)
-            response.raise_for_status()
-            temp_file.write(response.content)
-            temp_file_path = temp_file.name
+            with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as temp_file:
+                response = requests.get(file_url)
+                response.raise_for_status()
+                temp_file.write(response.content)
+                temp_file_path = temp_file.name
 
-        try:
-            pages = extract_text_from_file(temp_file_path)
-        finally:
-            if os.path.exists(temp_file_path):
-                os.remove(temp_file_path)
+            try:
+                pages = extract_text_from_file(temp_file_path)
+            finally:
+                if os.path.exists(temp_file_path):
+                    os.remove(temp_file_path)
 
         if not pages:
             doc.mark_completed()
