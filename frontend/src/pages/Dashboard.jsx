@@ -118,7 +118,11 @@ export default function Dashboard() {
             {/* Header */}
             <div className="mb-10">
                 <h1 className="text-3xl font-bold text-white mb-2">{greeting}, {userProfile?.username || 'User'} 👋</h1>
-                <p className="text-gray-400 text-lg">Here's what's in your knowledge base.</p>
+                <p className="text-gray-400 text-lg">
+                    {(loadingNotes || loadingDocs || loadingRes) 
+                        ? 'Waking up your workspace... please wait a moment ☕' 
+                        : "Here's what's in your knowledge base."}
+                </p>
             </div>
 
             {/* Stats Row */}
