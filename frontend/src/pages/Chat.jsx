@@ -106,11 +106,26 @@ export default function Chat() {
         return <FileText size={12} />;
     };
 
-    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+    // Initialize sidebar state based on screen size (open on desktop, closed on mobile)
+    const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth >= 768);
+
+    // Optional: Auto-adjust sidebar if user resizes window manually on desktop
+    useEffect(() => {
+        const handleResize = () => {
+            if (window.innerWidth >= 768) {
+                setIsSidebarOpen(true);
+            } else {
+                setIsSidebarOpen(false);
+            }
+        };
+
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     return (
         <div className="flex h-full gap-0 animate-fade-in relative">
-            {/* Sidebar Toggle Button (Mobile/Collapsed view) */}
+            {/* Sidebar Toggle Button (visible when sidebar is closed) */}
             {!isSidebarOpen && (
                 <button 
                     onClick={() => setIsSidebarOpen(true)}
@@ -120,8 +135,27 @@ export default function Chat() {
                 </button>
             )}
 
+            {/* Overlay for mobile when sidebar is open — clicking it closes sidebar */}
+            {isSidebarOpen && (
+                <div 
+                    className="fixed inset-0 bg-black/50 z-20 md:hidden"
+                    onClick={() => setIsSidebarOpen(false)}
+                />
+            )}
+
             {/* Sidebar — Conversation List */}
-            <div className={`shrink-0 border-r border-border bg-surface flex flex-col transition-all duration-300 ${isSidebarOpen ? 'w-64' : 'w-0 overflow-hidden border-none'}`}>
+            {/* 
+                Mobile: fixed position, overlays on top of chat content (z-30)
+                        slides in from left, hidden by default (-translate-x-full)
+                Desktop: relative position, sits normally in flex layout (w-64)
+            */}
+            <div className={`
+                fixed inset-y-0 left-0 z-30 w-64 bg-surface border-r border-border flex flex-col transition-all duration-300
+                md:relative md:z-auto
+                ${isSidebarOpen 
+                    ? 'translate-x-0' 
+                    : '-translate-x-full md:w-0 md:overflow-hidden md:border-none md:translate-x-0'}
+            `}>
                 <div className="p-4 border-b border-border flex gap-2">
                     <button
                         onClick={handleNewChat}
@@ -151,6 +185,7 @@ export default function Chat() {
                                 onClick={() => {
                                     setActiveConversationId(conv.id);
                                     setMessages([]);
+                                    setIsSidebarOpen(false); // Close sidebar on mobile after selecting
                                 }}
                                 className={`group flex items-center gap-2 px-3 py-2.5 rounded-lg cursor-pointer transition-all mb-1
                                     ${activeConversationId === conv.id
@@ -180,7 +215,7 @@ export default function Chat() {
             {/* Main Chat Area */}
             <div className="flex-1 flex flex-col min-w-0">
                 {/* Messages */}
-                <div className="flex-1 overflow-y-auto p-6">
+                <div className="flex-1 overflow-y-auto p-3 md:p-6">
                     {messages.length === 0 ? (
                         /* Empty State */
                         <div className="flex flex-col items-center justify-center h-full text-center">
