@@ -38,7 +38,7 @@ const TopicSkeleton = () => (
 export default function Topics() {
     const navigate = useNavigate();
 
-    const { data: topics, isLoading, isError } = useQuery({
+    const { data: topics, isLoading, isError, error } = useQuery({
         queryKey: ['topics'],
         queryFn: fetchTopics,
     });
@@ -117,6 +117,7 @@ export default function Topics() {
                 <div className="text-center py-16">
                     <AlertCircle size={48} className="text-red-400 mx-auto mb-4" />
                     <p className="text-red-400">Failed to load topics. Please try again.</p>
+                    <p className="text-gray-500 mt-2 text-sm">{error?.response?.data?.detail || error?.message}</p>
                 </div>
             ) : totalTopics === 0 ? (
                 /* Empty State */
