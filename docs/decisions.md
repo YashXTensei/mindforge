@@ -102,6 +102,38 @@ MindForge is an AI learning companion that remembers what you're forgetting.
 
 ---
 
+## 2026-08-01 — Phase 3.5 Image Intelligence
+
+### Extractor Factory Pattern
+**Decision:** Refactored text extraction into a polymorphic `BaseExtractor` pattern (`PDFExtractor`, `ImageExtractor`).
+**Reason:** Allows the Celery pipeline to handle both PDFs and standalone images cleanly without `if/else` spaghetti. 
+
+### Vision AI Provider
+**Decision:** Google Gemini 1.5 Flash Vision
+**Reason:** High accuracy for OCR and diagram understanding, and fits within the free tier rate limits. Used inline rather than storing intermediate image texts.
+
+---
+
+## 2026-08-25 — Phase 4 Active Learning Engine
+
+### Topic Extraction Strategy
+**Decision:** Auto-extract topics via LLM asynchronously *during* document ingestion (Celery) rather than relying on manual user tagging.
+**Reason:** Reduces friction. Users upload PDFs and instantly get tracked topics.
+
+### Deduplication
+**Decision:** Case-insensitive exact match + fuzzy word-overlap matching (80%+ overlap of non-stop-words).
+**Reason:** LLMs generate slightly different topic names (e.g., "React Props Vs State" vs "React Props And State") for the same concept across different documents.
+
+### Spaced Repetition Algorithm
+**Decision:** Modified SM-2 Algorithm.
+**Reason:** Industry standard for flashcards (Anki). Modified the confidence formula (`min(1.0, accuracy * (reviews / 6))`) to ensure confidence ramps up gradually rather than hitting 100% after one correct answer.
+
+### Question Generation
+**Decision:** Just-in-Time LLM generation during the Daily Review session rather than pre-generating thousands of questions.
+**Reason:** Saves database storage and ensures questions are adapted to the user's *current* weak areas and confidence level.
+
+---
+
 ## Timeline
 
 | Date | Event |
@@ -109,3 +141,5 @@ MindForge is an AI learning companion that remembers what you're forgetting.
 | 21 June 2026 | Project conceived |
 | 23 June 2026 | Architecture finalized, PostgreSQL setup, Phase 0 started |
 | 30 June 2026 | Official Phase 1 development begins |
+| 14 Aug 2026 | MIP Deployed to production (mindtensei.me) |
+| 25 Aug 2026 | Phase 4 Complete (Learning Engine deployed) |

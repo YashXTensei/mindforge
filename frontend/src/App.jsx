@@ -10,6 +10,8 @@ import Search from './pages/Search';
 import NoteView from './pages/NoteView';
 import Chat from './pages/Chat';
 import About from './pages/About';
+import Topics from './pages/Topics';
+import DailyReview from './pages/DailyReview';
 import NotFound from './pages/NotFound';
 
 import { Toaster } from 'react-hot-toast';
@@ -33,6 +35,8 @@ function App() {
                     <Route path="/profile" element={<Profile />} />
                     <Route path="/notes/:id" element={<NoteView />} />
                     <Route path="/chat" element={<Chat />} />
+                    <Route path="/topics" element={<Topics />} />
+                    <Route path="/review" element={<DailyReview />} />
                     <Route path="/about" element={<About />} />
                     
                     {/* Catch-all 404 Route */}

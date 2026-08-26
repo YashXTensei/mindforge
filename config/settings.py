@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'vault',
     'search',
     'rag',
+    'learning',
 ]
 
 MIDDLEWARE = [

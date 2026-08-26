@@ -30,10 +30,31 @@ function Register() {
             }, 1500)
             
         } catch (error) {
-            toast.error(error.response?.data?.error || 'Registration failed')
-            setIsLoading(false)
+            console.error('Register error:', error.response?.data);
+            
+            let errorMsg = 'Registration failed. Please try again.';
+            
+            // Handle DRF validation errors (which come as object keys)
+            if (error.response?.data) {
+                if (error.response.data.error) {
+                    errorMsg = error.response.data.error;
+                } else if (error.response.data.detail) {
+                    errorMsg = error.response.data.detail;
+                } else {
+                    // Extract the first error message from the object values
+                    const firstError = Object.values(error.response.data)[0];
+                    if (Array.isArray(firstError)) {
+                        errorMsg = firstError[0];
+                    } else if (typeof firstError === 'string') {
+                        errorMsg = firstError;
+                    }
+                }
+            }
+            
+            toast.error(errorMsg);
+            setIsLoading(false);
         }
-    }
+    };
 
     return (
         <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-4 relative overflow-hidden">

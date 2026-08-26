@@ -1,6 +1,10 @@
 import { useState } from 'react';
 import { Outlet, Link, useNavigate, useLocation, Navigate } from 'react-router-dom';
+<<<<<<< HEAD
 import { LayoutDashboard, StickyNote, LogOut, User, Archive, Search, Bot, Info, Menu, X } from 'lucide-react';
+=======
+import { LayoutDashboard, StickyNote, LogOut, User, Archive, Search, Bot, Info, Menu, X, Brain } from 'lucide-react';
+>>>>>>> phase4
 import { Button } from './ui/Button';
 
 export default function Layout() {
@@ -28,6 +32,7 @@ export default function Layout() {
         { path: '/notes', name: 'Notes', icon: <StickyNote size={20} /> },
         { path: '/vault', name: 'Vault', icon: <Archive size={20} /> },
         { path: '/chat', name: 'AI Chat', icon: <Bot size={20} /> },
+        { path: '/topics', name: 'Topics', icon: <Brain size={20} /> },
         { path: '/profile', name: 'Profile', icon: <User size={20} /> },
         { path: '/about', name: 'About', icon: <Info size={20} /> },
     ];
@@ -128,7 +133,11 @@ export default function Layout() {
             )}
 
             {/* Main Content Area */}
+<<<<<<< HEAD
             <main className={`flex-1 overflow-y-auto relative pt-16 md:pt-0 ${isChat ? 'p-0' : 'p-4 md:p-8'}`}>
+=======
+            <main className={`flex-1 overflow-y-auto relative ${isChat ? 'p-0 pt-16 md:pt-0' : 'p-4 pt-20 md:p-8'}`}>
+>>>>>>> phase4
                 <div className={`mx-auto h-full ${isChat ? 'w-full' : 'max-w-7xl'}`}>
                     <Outlet />
                 </div>

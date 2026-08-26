@@ -1,25 +1,25 @@
 # MindForge — Architecture
 
-> Last Updated: 23 June 2026
+> Last Updated: 25 August 2026
 
 ## System Overview
 
-```
+```text
 ┌─────────────────────────────────────────────────┐
 │                  React (Vite)                    │
 │              Frontend — Port 5173                │
 └──────────────────┬──────────────────────────────┘
-                   │ REST API + WebSocket
+                   │ REST API
 ┌──────────────────▼──────────────────────────────┐
 │              Django REST Framework               │
 │              Backend — Port 8000                 │
 │                                                  │
-│  ┌──────────┐ ┌──────────┐ ┌──────────────────┐ │
-│  │ accounts │ │  notes   │ │  vault (Phase 2)  │ │
-│  └──────────┘ └──────────┘ └──────────────────┘ │
-│  ┌──────────┐ ┌──────────┐ ┌──────────────────┐ │
-│  │ rag (P3) │ │learn (P5)│ │ actions (Phase 6) │ │
-│  └──────────┘ └──────────┘ └──────────────────┘ │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐          │
+│  │ accounts │ │  notes   │ │  vault   │          │
+│  └──────────┘ └──────────┘ └──────────┘          │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐          │
+│  │   rag    │ │ learning │ │ graph(P5)│          │
+│  └──────────┘ └──────────┘ └──────────┘          │
 └───┬──────────────┬──────────────┬───────────────┘
     │              │              │
 ┌───▼───┐    ┌─────▼─────┐  ┌────▼────┐
@@ -30,62 +30,53 @@
 
 ## Database Schema
 
-```
+```text
 User
- ├── Note (title, content_md, created, updated)
+ ├── Note (title, content, created, updated)
  │    ├── Tag (many-to-many)
  │    └── Category (foreign key)
  │
- ├── PDF (title, file_path, page_count, uploaded)     [Phase 2]
+ ├── Document (title, file, page_count, uploaded)     [Vault]
  │    └── Category (foreign key)
  │
- ├── Resource (title, url, type, saved)                [Phase 2]
+ ├── Resource (title, url, type, saved)               [Vault]
  │    └── Category (foreign key)
  │
- ├── Chunk (content, source_type, source_id, vector)   [Phase 3]
+ ├── Chunk (content, source_type, source_id, vector)  [RAG]
  │
- ├── ChatConversation → ChatMessage (role, content)    [Phase 3]
+ ├── ChatConversation → ChatMessage (role, content)   [RAG]
  │
- ├── Flashcard (front, back, difficulty)               [Phase 4]
+ ├── TopicMastery (topic_name, confidence, next_review) [Learning]
+ │    ├── TopicSource (Generic FK to Document/Note)
+ │    └── ReviewItem (FK to TopicMastery)
  │
- ├── QuizQuestion → QuizAttempt                        [Phase 4]
+ ├── ReviewSession (score, total_items, completed_at)   [Learning]
+ │    └── ReviewItem (question, options, user_answer)
  │
- ├── LearningTopic (confidence, revisions, decay)      [Phase 5]
- │    └── RevisionLog
+ ├── Claim (claim_text, evidence, source)             [Graph - P5]
  │
- ├── Goal → GoalMilestone                              [Phase 6]
- │
- ├── Task (deadline, priority, status)                 [Phase 6]
- │
- ├── Event (datetime, reminder)                        [Phase 6]
- │
- ├── AIActionLog (command, action, status)              [Phase 6]
- │
- └── DailyBrief (content, date)                        [Phase 7]
+ └── TopicRelationship (source, target, type)         [Graph - P5]
 ```
 
 ## Django Apps → Phase Mapping
 
 | App | Phase | Models |
 |---|---|---|
-| `accounts` | Phase 1 | User profile extension |
+| `accounts` | Phase 1 | (Built-in User model extensions if any) |
 | `notes` | Phase 1 | Note, Category, Tag |
-| `vault` | Phase 2 | PDF, Resource |
+| `vault` | Phase 2 | Document, Resource |
 | `rag` | Phase 3 | Chunk, ChatConversation, ChatMessage |
-| `learning` | Phase 4-5 | Flashcard, QuizQuestion, QuizAttempt, LearningTopic, RevisionLog |
-| `goals` | Phase 6 | Goal, GoalMilestone, Task, Event |
-| `actions` | Phase 6 | AIActionLog |
-| `brief` | Phase 7 | DailyBrief |
+| `learning` | Phase 4 | TopicMastery, TopicSource, ReviewSession, ReviewItem |
+| `graph` | Phase 5 | Claim, TopicRelationship |
 
 ## API Structure
 
-```
+```text
 /api/v1/
 ├── /auth/
 │    ├── POST /register/
-│    ├── POST /login/          (returns access + refresh token)
-│    ├── POST /token/refresh/
-│    └── GET  /profile/
+│    ├── POST /token/          (returns access + refresh token)
+│    └── POST /token/refresh/
 │
 ├── /notes/
 │    ├── GET/POST    /
@@ -93,36 +84,33 @@ User
 │    ├── GET /categories/
 │    └── GET /tags/
 │
-├── /vault/                     [Phase 2]
-│    ├── POST /pdfs/upload/
-│    ├── GET  /pdfs/
+├── /vault/
+│    ├── POST /documents/
+│    ├── GET  /documents/
 │    ├── GET/POST /resources/
 │    └── GET /search/?q=...
 │
-├── /rag/                       [Phase 3]
+├── /rag/
 │    ├── POST /chat/
 │    ├── GET  /conversations/
-│    └── GET  /search/?q=...   (semantic)
+│    └── GET  /search/?q=...   (semantic search)
 │
-├── /learning/                  [Phase 4-5]
-│    ├── GET  /flashcards/
-│    ├── POST /quiz/generate/
-│    ├── POST /quiz/attempt/
-│    ├── GET  /profile/        (learning topics)
-│    └── GET  /suggestions/
+├── /learning/
+│    ├── GET  /topics/
+│    ├── GET  /topics/{id}/
+│    ├── GET  /daily-review/
+│    └── POST /submit-answer/
 │
-├── /goals/                     [Phase 6]
-│    ├── GET/POST /
-│    └── GET/POST /tasks/
-│
-└── /actions/                   [Phase 6]
-     └── POST /execute/        (natural language → action)
+└── /graph/                     [Phase 5 - Upcoming]
+     ├── GET /network/
+     └── GET /analyze-gap/
 ```
 
-## Free AI API Strategy
+## AI Provider Strategy
 
-| Provider | Use Case | Free Limit |
+| Provider | Use Case | Implementation |
 |---|---|---|
-| Google Gemini Flash | Chat, summaries, quizzes | 15 RPM |
-| Cohere Embed v3 | Vector embeddings | 100 RPM |
-| Ollama (local) | Development and testing | Unlimited |
+| **Google Gemini Flash 3.6** | Chat, Quiz Generation, Topic Extraction | Active |
+| **Google Gemini Flash 3.5 Vision** | Image OCR / Inline Vision | Active |
+| **Cohere Embed v3** | Vector embeddings (RAG) | Active |
+| **Ollama (local)** | Dev/Fallback | Planned |

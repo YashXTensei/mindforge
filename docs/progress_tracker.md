@@ -30,49 +30,50 @@ This document tracks everything built in MindForge, what remains to be built, an
 - **Standalone Image Extraction:** Uploaded images (.png, .jpg) are now processed inline using Google Gemini Vision (model: `models/gemini-3.6-flash`).
 - **Polymorphic Extractor Pattern:** Extractor logic refactored into `BaseExtractor`, `PDFExtractor`, and `ImageExtractor`.
 
-### 5. Rate Limiting (Phase 4)
-- **API Throttling (DRF):** Chat API (10/min), Semantic Search (10/min), General API (120/min) using `ScopedRateThrottle`.
-- **Celery Task Throttling:** Document/Note processing limited to 5/min per worker.
-- **Friendly Error Responses:** Custom DRF exception handler returns clean JSON instead of raw error text.
-- **Centralized Config:** All rate limits defined in `RATE_LIMITS` dict in `settings.py`.
+### 5. Active Learning Engine (Phase 4) - NEW!
+- **Topic Extraction:** Automatically extracts learning topics from uploaded PDFs and Notes using Gemini.
+- **Mastery Tracking (SM-2):** Tracks user confidence on each topic using the SM-2 Spaced Repetition algorithm.
+- **Re-upload & Duplicate Protection:** Uses case-insensitive fuzzy matching to deduplicate topics when similar files are uploaded.
+- **Daily Review Session:** Interactive MCQ quiz UI that tests users on due topics. AI generates questions and "Why am I reviewing this?" context on the fly.
+- **Mobile Responsiveness:** Added hamburger menu, mobile-friendly navigation, and auto-hiding chat sidebar.
+- **Error Handling:** Graceful API and UI handling for rate limits, registration/login failures, and quiz generation errors.
 
 ---
 
 ## 🔴 What is Pending (To-Do)
 
-### Phase 4 (Deployment Prep: UI/UX, Security, Tests)
-- [x] **Rate Limiting:** DRF throttling + Celery task rate limits + friendly error responses.
-- [ ] **UI/UX Polishing:** Loading skeletons, empty states, chat code-block syntax highlighting, mobile responsiveness, and manual RAG-trigger UI for Notes.
-- [ ] **Security:** Separate `settings.py` for prod/dev, hide `SECRET_KEY`, set `DEBUG = False`, lock down CORS.
-- [ ] **Routing:** Protected route guards for React frontend.
-- [ ] **Testing:** Write `pytest` test suite for the RAG engine (`rag/tests.py`).
+### Phase 5 (The Network Effect - Interactive Graph)
+- [ ] Build 3D Force-Directed Graph UI (using `react-force-graph`).
+- [ ] Backend graph extraction: LLM analyzes connections between chunks/topics and builds semantic nodes and edges.
+- [ ] Implement graph filtering, zooming, and node click actions.
 
-### Phase 5+ (Future Enhancements)
-- [ ] **PDF Embedded Images:** Update `PDFExtractor` to extract images embedded inside PDFs, process them via `ImageExtractor`, and append the text.
-- [ ] **Duplicate OCR Detection:** Integrate the `difflib` threshold check to prevent duplicating text that already exists in the PDF text layer.
-- [ ] **Fallback Model Router:** Build a smart AI router (`ModelRouter`) that holds multiple API keys (Gemini, OpenRouter, OpenAI, etc.). If one model's rate limit is exhausted or fails, it automatically falls back to the next available model.
+### Phase 6 (Intelligent Agents - "Your Second Brain at Work")
+- [ ] **Curiosity Engine:** Background agent that finds connections between old and new notes and sends "Did you know?" notifications.
+- [ ] **The "Devil's Advocate" Agent:** Agent that challenges your ideas when you write notes.
+- [ ] **Content Synthesizer:** Weekly summary agent that emails/notifies you about what you learned.
+
+### Phase 7 (Polish, Security & Deployment)
+- [ ] Comprehensive Testing (`pytest`).
+- [ ] Setup production environments (Separate `settings.py` for dev/prod).
+- [ ] Vercel/Heroku pipeline tuning.
+- [ ] UI/UX final touch-ups (skeletons, dark mode consistency).
 
 ---
 
 ## 📅 Chronological Changelog
 
 ### July 30 - August 8, 2026 (Foundation & RAG Engine Complete)
-- **Backend:** Setup Django, Celery, Redis, and PostgreSQL (`pgvector`).
-- **RAG Pipeline:** Built the entire pipeline (Extract -> Chunk -> Embed -> Save).
-- **Frontend:** Built Vault UI, Notes UI, and integrated AI Chat Sidebar.
-- **Bug Fixes:** 
-  - Fixed tracebacks leaking into Chat UI. Added elegant rate-limit error messages.
-  - Implemented `GenericRelation` to fix orphan chunks when deleting documents.
-  - Fixed file caching issue when re-uploading documents.
-- **Phase 3.5 Init:** Designed ADR for Image Intelligence. Created `rag/vision.py` and converted extraction logic to a factory pattern (`BaseExtractor`). Successfully tested standalone image OCR with `CodeForces_Rating` image.
+- Setup Django, Celery, Redis, and PostgreSQL (`pgvector`).
+- Built RAG Pipeline (Extract -> Chunk -> Embed -> Save).
+- Built Vault UI, Notes UI, and integrated AI Chat Sidebar.
+- Implemented `GenericRelation`, standalone Image OCR, rate limiting, and custom DRF exception handlers.
 
-*(Going forward, updates will be logged here daily with dates and specific actions taken.)*
-
-### August 3, 2026
-- **Rate Limiting:** Implemented DRF `ScopedRateThrottle` on Chat (10/min) and Search (10/min) endpoints.
-- **Celery Limits:** Added `rate_limit='5/m'` to `process_document` and `process_note` tasks.
-- **Custom Exception Handler:** Created `config/exceptions.py` for user-friendly throttle error messages.
-- **Centralized Config:** All rate limits stored in `RATE_LIMITS` dict in `settings.py`.
+### August 25, 2026 (Phase 4: Active Learning Engine Complete)
+- **Backend:** Created `learning` app, `TopicMastery`, `TopicSource`, `ReviewSession`, `ReviewItem` models.
+- **Algorithm:** Implemented SM-2 Spaced Repetition (`learning/sm2.py`) with progressive confidence building.
+- **Celery:** Hooked Gemini topic extraction into existing RAG pipeline (`process_document` and `process_note`). Added fuzzy matching to prevent duplicates.
+- **Frontend:** Built `/topics` Knowledge Map and `/review` Daily Quiz pages with API integration and smart error handling.
+- **UI Fixes:** Added mobile responsiveness (hamburger menu, sliding chat sidebar). Fixed Toaster messages for auth errors.
 
 <!-- phase 4 -->
 

@@ -22,6 +22,7 @@ urlpatterns = [
     path('api/vault/', include('vault.urls')),
     path('api/search/', include('search.urls')),
     path('api/rag/', include('rag.urls')),
+    path('api/learning/', include('learning.urls')),
 ]
 
 if settings.DEBUG:

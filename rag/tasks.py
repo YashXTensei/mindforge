@@ -48,35 +48,46 @@ def process_document(self, document_id):
         
         file_url = doc.file.url
         
-        # Cloudinary's free plan blocks unauthenticated access for raw files.
-        # Use the Cloudinary SDK to generate a signed URL for download.
-        if 'cloudinary.com' in file_url:
-            import cloudinary.utils
-            # Extract the public_id from the stored file name
-            public_id = doc.file.name
-            # Determine resource_type: 'raw' for RawMediaCloudinaryStorage
-            signed_url, _ = cloudinary.utils.cloudinary_url(
-                public_id,
-                resource_type="raw",
-                type="upload",
-                sign_url=True,
-            )
-            if ext and not signed_url.lower().endswith(ext):
-                signed_url += ext
-            file_url = signed_url
-            logger.info(f"Using signed Cloudinary URL for doc {doc.id}")
+        # Check if file is stored locally (URL starts with /) or remotely (http/https)
+        if file_url.startswith('/'):
+            # LOCAL file — read directly from disk, no HTTP needed
+            try:
+                local_path = doc.file.path  # Django gives the absolute filesystem path
+                pages = extract_text_from_file(local_path)
+            except Exception as local_err:
+                logger.error(f"Document {doc.id}: Failed to read local file: {local_err}")
+                raise
+        else:
+            # REMOTE file (Cloudinary, S3, etc.) — download via HTTP
+            # Cloudinary's free plan blocks unauthenticated access for raw files.
+            # Use the Cloudinary SDK to generate a signed URL for download.
+            if 'cloudinary.com' in file_url:
+                import cloudinary.utils
+                # Extract the public_id from the stored file name
+                public_id = doc.file.name
+                # Determine resource_type: 'raw' for RawMediaCloudinaryStorage
+                signed_url, _ = cloudinary.utils.cloudinary_url(
+                    public_id,
+                    resource_type="raw",
+                    type="upload",
+                    sign_url=True,
+                )
+                if ext and not signed_url.lower().endswith(ext):
+                    signed_url += ext
+                file_url = signed_url
+                logger.info(f"Using signed Cloudinary URL for doc {doc.id}")
 
-        with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as temp_file:
-            response = requests.get(file_url)
-            response.raise_for_status()
-            temp_file.write(response.content)
-            temp_file_path = temp_file.name
+            with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as temp_file:
+                response = requests.get(file_url)
+                response.raise_for_status()
+                temp_file.write(response.content)
+                temp_file_path = temp_file.name
 
-        try:
-            pages = extract_text_from_file(temp_file_path)
-        finally:
-            if os.path.exists(temp_file_path):
-                os.remove(temp_file_path)
+            try:
+                pages = extract_text_from_file(temp_file_path)
+            finally:
+                if os.path.exists(temp_file_path):
+                    os.remove(temp_file_path)
 
         if not pages:
             doc.mark_completed()
@@ -122,6 +133,30 @@ def process_document(self, document_id):
             ))
 
         Chunk.objects.bulk_create(chunk_objects)
+
+        # ── Step 5: Extract Topics for Learning Engine (Phase 4) ──
+        # This step is independent of the RAG pipeline.
+        # If it fails, we still mark the document as completed
+        # because chunks are already saved and search/chat will work.
+        try:
+            from learning.generation import extract_topics_from_text
+            from learning.services import save_topics_for_content
+
+            # Combine chunk texts to give Gemini enough context
+            # We use the first ~15000 chars (handled inside extract_topics_from_text)
+            full_text = ' '.join(chunk_texts)
+            
+            topics = extract_topics_from_text(full_text)
+            
+            if topics:
+                saved = save_topics_for_content(doc.user, doc, topics)
+                logger.info(f"Document {doc.id}: {len(saved)} topics extracted: {topics}")
+            else:
+                logger.info(f"Document {doc.id}: No topics extracted")
+                
+        except Exception as topic_err:
+            # Topic extraction is a "nice to have" — don't fail the whole pipeline
+            logger.warning(f"Document {doc.id}: Topic extraction failed (non-fatal): {topic_err}")
 
         # ── Done! ──
         doc.mark_completed()
@@ -204,6 +239,23 @@ def process_note(self, note_id):
             ))
 
         Chunk.objects.bulk_create(chunk_objects)
+
+        # ── Step 5: Extract Topics for Learning Engine (Phase 4) ──
+        try:
+            from learning.generation import extract_topics_from_text
+            from learning.services import save_topics_for_content
+
+            full_text = ' '.join(chunk_texts)
+            topics = extract_topics_from_text(full_text)
+            
+            if topics:
+                saved = save_topics_for_content(note.user, note, topics)
+                logger.info(f"Note {note.id}: {len(saved)} topics extracted: {topics}")
+            else:
+                logger.info(f"Note {note.id}: No topics extracted")
+                
+        except Exception as topic_err:
+            logger.warning(f"Note {note.id}: Topic extraction failed (non-fatal): {topic_err}")
 
         # ── Done! ──
         note.mark_completed()
