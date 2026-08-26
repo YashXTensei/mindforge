@@ -175,11 +175,21 @@ export default function Topics() {
                                 <span>{topic.total_reviews} reviews</span>
                             </div>
 
-                            {/* Due Badge */}
-                            {topic.is_due && (
+                            {/* Due / Next Review Badge */}
+                            {topic.is_due ? (
                                 <div className="mt-3 flex items-center gap-1.5 text-xs text-yellow-400">
                                     <Clock size={12} />
                                     <span>Due for review</span>
+                                </div>
+                            ) : (
+                                <div className="mt-3 flex items-center gap-1.5 text-xs text-gray-500">
+                                    <Clock size={12} />
+                                    <span>Next review: {
+                                        new Date(topic.next_review_date).toLocaleDateString('en-US', {
+                                            month: 'short',
+                                            day: 'numeric'
+                                        })
+                                    }</span>
                                 </div>
                             )}
 

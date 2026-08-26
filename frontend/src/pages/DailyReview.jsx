@@ -18,9 +18,18 @@ export default function DailyReview() {
     const { data: session, isLoading, isError } = useQuery({
         queryKey: ['dailyReview'],
         queryFn: fetchDailyReview,
-        refetchOnWindowFocus: false,  // Don't refetch when user switches tabs during quiz
-        staleTime: Infinity,          // Don't auto-refetch — we manually invalidate when needed
+        refetchOnWindowFocus: false,
     });
+
+    // Resume from where the user left off
+    React.useEffect(() => {
+        if (session && session.items) {
+            const firstUnanswered = session.items.findIndex(item => !item.user_answer);
+            if (firstUnanswered !== -1) {
+                setCurrentIndex(firstUnanswered);
+            }
+        }
+    }, [session]);
 
     // Submit answer mutation
     const submitMutation = useMutation({
@@ -84,7 +93,7 @@ export default function DailyReview() {
     }
 
     // Session is already complete (user already did today's review)
-    if (session?.is_completed) {
+    if (session?.is_completed && !result) {
         const scorePct = session.total_items > 0 
             ? Math.round((session.correct_items / session.total_items) * 100) 
             : 0;
@@ -124,12 +133,14 @@ export default function DailyReview() {
     };
 
     const handleNext = () => {
-        // If session is complete, user has already seen the explanation.
-        // Now take them back to Topics page.
+        // If session is complete, let the user see the final Trophy/Results screen.
+        // We do this by invalidating the query and clearing the result state, 
+        // which will trigger the 'is_completed' early return above.
         if (result?.session_completed) {
+            queryClient.setQueryData(['dailyReview'], (old) => old ? { ...old, is_completed: true, correct_items: old.correct_items + (result.is_correct ? 1 : 0) } : old);
             queryClient.invalidateQueries(['dailyReview']);
             queryClient.invalidateQueries(['topics']);
-            navigate('/topics');
+            setResult(null);
             return;
         }
         
@@ -250,35 +261,60 @@ export default function DailyReview() {
                 <div className={`rounded-xl p-5 mb-6 border ${
                     result.is_correct 
                         ? 'bg-emerald-500/5 border-emerald-500/20' 
-                        : 'bg-red-500/5 border-red-500/20'
+                        : selectedAnswer === 'S'
+                            ? 'bg-orange-500/5 border-orange-500/20'
+                            : 'bg-red-500/5 border-red-500/20'
                 }`}>
                     <div className="flex items-center gap-2 mb-2">
                         {result.is_correct 
                             ? <CheckCircle size={20} className="text-emerald-400" />
-                            : <XCircle size={20} className="text-red-400" />
+                            : selectedAnswer === 'S'
+                                ? <AlertCircle size={20} className="text-orange-400" />
+                                : <XCircle size={20} className="text-red-400" />
                         }
-                        <span className={`font-semibold ${result.is_correct ? 'text-emerald-400' : 'text-red-400'}`}>
-                            {result.is_correct ? 'Correct!' : 'Incorrect'}
+                        <span className={`font-semibold ${
+                            result.is_correct ? 'text-emerald-400' 
+                            : selectedAnswer === 'S' ? 'text-orange-400'
+                            : 'text-red-400'
+                        }`}>
+                            {result.is_correct ? 'Correct!' : selectedAnswer === 'S' ? 'Skipped' : 'Incorrect'}
                         </span>
                     </div>
+                    {selectedAnswer === 'S' && (
+                        <p className="text-gray-400 text-sm mb-3">
+                            You skipped this question. The correct answer was <strong>Option {result.correct_answer}</strong>.
+                        </p>
+                    )}
                     <p className="text-gray-300 text-sm leading-relaxed">{result.explanation}</p>
                 </div>
             )}
 
             {/* Action Button */}
-            <div className="flex justify-end">
+            <div className="flex justify-end gap-3">
                 {!result ? (
-                    <button
-                        onClick={handleSubmit}
-                        disabled={!selectedAnswer || submitMutation.isPending}
-                        className="flex items-center gap-2 px-6 py-3 bg-accent hover:bg-accent-dark text-white rounded-xl font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                    >
-                        {submitMutation.isPending ? (
-                            <><Loader2 size={18} className="animate-spin" /> Checking...</>
-                        ) : (
-                            'Submit Answer'
-                        )}
-                    </button>
+                    <>
+                        <button
+                            onClick={() => {
+                                setSelectedAnswer('S');
+                                submitMutation.mutate({ itemId: currentItem.id, answer: 'S' });
+                            }}
+                            disabled={submitMutation.isPending}
+                            className="px-6 py-3 bg-surface-card hover:bg-surface-hover text-gray-300 border border-border rounded-xl font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                            Skip Question
+                        </button>
+                        <button
+                            onClick={handleSubmit}
+                            disabled={!selectedAnswer || selectedAnswer === 'S' || submitMutation.isPending}
+                            className="flex items-center gap-2 px-6 py-3 bg-accent hover:bg-accent-dark text-white rounded-xl font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                            {submitMutation.isPending ? (
+                                <><Loader2 size={18} className="animate-spin" /> Checking...</>
+                            ) : (
+                                'Submit Answer'
+                            )}
+                        </button>
+                    </>
                 ) : (
                     <button
                         onClick={handleNext}

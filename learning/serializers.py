@@ -45,6 +45,12 @@ class TopicMasterySerializer(serializers.ModelSerializer):
 class ReviewItemSerializer(serializers.ModelSerializer):
     """Serializer for an individual review question."""
     topic_name = serializers.CharField(source='mastery.topic_name', read_only=True)
+    
+    # Conditionally return these fields only if already answered
+    user_answer = serializers.CharField(read_only=True)
+    is_correct = serializers.BooleanField(read_only=True)
+    correct_answer = serializers.SerializerMethodField()
+    explanation = serializers.SerializerMethodField()
 
     class Meta:
         model = ReviewItem
@@ -54,10 +60,22 @@ class ReviewItemSerializer(serializers.ModelSerializer):
             'question_text', 
             'options', 
             'review_context',
-            'difficulty_level'
-            # Note: We DO NOT send 'correct_answer' or 'explanation' to the frontend 
-            # until the user submits their answer, to prevent cheating via API inspection.
+            'difficulty_level',
+            'user_answer',
+            'is_correct',
+            'correct_answer',
+            'explanation'
         ]
+
+    def get_correct_answer(self, obj):
+        if obj.user_answer:
+            return obj.correct_answer
+        return None
+
+    def get_explanation(self, obj):
+        if obj.user_answer:
+            return obj.explanation
+        return None
 
 
 class ReviewSessionSerializer(serializers.ModelSerializer):

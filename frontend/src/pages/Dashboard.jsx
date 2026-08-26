@@ -2,7 +2,8 @@ import React, { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { fetchNotes } from '../api/notes';
 import { fetchDocuments, fetchResources } from '../api/vault';
-import { FileText, Files, Link as LinkIcon, Sparkles, Plus, Upload, Clock, AlertCircle } from 'lucide-react';
+import { fetchTopics } from '../api/learning';
+import { FileText, Files, Link as LinkIcon, Sparkles, Plus, Upload, Clock, AlertCircle, Brain } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import API from '../api/axios';
 
@@ -75,9 +76,15 @@ export default function Dashboard() {
         queryFn: () => fetchResources()
     });
 
+    const { data: topics } = useQuery({
+        queryKey: ['topics'],
+        queryFn: fetchTopics
+    });
+
     // --- Derived Data ---
     const recentNotes = notes?.slice(0, 5) || [];
     const recentDocs = documents?.slice(0, 5) || [];
+    const dueTopicsCount = topics?.filter(topic => topic.is_due)?.length || 0;
 
     // --- Components ---
     const StatCard = ({ title, value, icon, color, isLoading, isError }) => (
@@ -124,6 +131,29 @@ export default function Dashboard() {
                         : "Here's what's in your knowledge base."}
                 </p>
             </div>
+
+            {/* Pending Reviews Notification */}
+            {dueTopicsCount > 0 && (
+                <div className="mb-10 bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-yellow-500/20 rounded-full flex items-center justify-center shrink-0">
+                            <Brain size={24} className="text-yellow-400" />
+                        </div>
+                        <div>
+                            <h3 className="text-yellow-400 font-bold text-lg">You have pending reviews</h3>
+                            <p className="text-gray-300 text-sm">
+                                {dueTopicsCount} {dueTopicsCount === 1 ? 'topic is' : 'topics are'} decaying in your memory. Review them now to keep your knowledge sharp.
+                            </p>
+                        </div>
+                    </div>
+                    <button 
+                        onClick={() => navigate('/review')}
+                        className="px-6 py-2.5 bg-yellow-500 hover:bg-yellow-400 text-black font-semibold rounded-lg transition-colors whitespace-nowrap shrink-0"
+                    >
+                        Start Review
+                    </button>
+                </div>
+            )}
 
             {/* Stats Row */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-12">

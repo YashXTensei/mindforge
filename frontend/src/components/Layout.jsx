@@ -129,7 +129,7 @@ export default function Layout() {
             )}
 
             {/* Main Content Area */}
-            <main className={`flex-1 overflow-y-auto relative pt-16 md:pt-0 ${isChat ? 'p-0' : 'p-4 md:p-8'}`}>
+            <main className={`flex-1 overflow-y-auto relative ${isChat ? 'p-0 pt-16 md:pt-0' : 'p-4 pt-20 md:p-8'}`}>
                 <div className={`mx-auto h-full ${isChat ? 'w-full' : 'max-w-7xl'}`}>
                     <Outlet />
                 </div>

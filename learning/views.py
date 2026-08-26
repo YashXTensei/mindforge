@@ -37,15 +37,15 @@ class DailyReviewView(views.APIView):
         user = request.user
         today = timezone.now().date()
 
-        # 1. Check if user already has an active session today
-        active_session = ReviewSession.objects.filter(
+        # 1. Check if user has an active session
+        session = ReviewSession.objects.filter(
             user=user, 
             completed_at__isnull=True,
             created_at__date=today
         ).first()
-
-        if active_session:
-            serializer = ReviewSessionSerializer(active_session)
+        
+        if session:
+            serializer = ReviewSessionSerializer(session)
             return Response(serializer.data)
 
         # 2. No active session. Find topics due for review today.
@@ -55,6 +55,16 @@ class DailyReviewView(views.APIView):
         ).order_by('next_review_date')[:10]  # Max 10 questions per day to prevent burnout
 
         if not due_topics.exists():
+            # If no topics due, see if they already completed a session today
+            # so we can show them the Trophy screen instead of a blank "All caught up"
+            completed_session = ReviewSession.objects.filter(
+                user=user,
+                completed_at__date=today
+            ).first()
+            if completed_session:
+                serializer = ReviewSessionSerializer(completed_session)
+                return Response(serializer.data)
+                
             return Response({"message": "You're all caught up for today! No topics due for review."}, status=status.HTTP_200_OK)
 
         # 3. Create a new session
@@ -130,7 +140,7 @@ class SubmitAnswerView(views.APIView):
             return Response({"error": "Already answered"}, status=status.HTTP_400_BAD_REQUEST)
 
         user_answer = request.data.get('answer')
-        if user_answer not in ['A', 'B', 'C', 'D']:
+        if user_answer not in ['A', 'B', 'C', 'D', 'S']:
             return Response({"error": "Invalid answer format"}, status=status.HTTP_400_BAD_REQUEST)
 
         # Evaluate answer
@@ -140,8 +150,14 @@ class SubmitAnswerView(views.APIView):
         item.save()
 
         # Trigger SM-2 Algorithm
-        # Quality score: 4 for correct, 1 for incorrect (simplified for MCQ)
-        quality = 4 if is_correct else 1
+        # Quality score: 4 for correct, 1 for incorrect, 0 for skip
+        if is_correct:
+            quality = 4
+        elif user_answer == 'S':
+            quality = 0
+        else:
+            quality = 1
+            
         update_sm2(item.mastery, quality)
 
         # Update Session Score
