@@ -1,5 +1,5 @@
 import React from 'react';
-import { Info, Sparkles, BookOpen, Database, Search, MessageSquare, Zap } from 'lucide-react';
+import { Info, Sparkles, BookOpen, Database, Search, MessageSquare, Zap, Brain } from 'lucide-react';
 
 export default function About() {
     return (
@@ -10,7 +10,7 @@ export default function About() {
                 <div className="w-20 h-20 bg-accent/10 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-accent/20">
                     <Sparkles size={40} className="text-accent" />
                 </div>
-                <h1 className="text-4xl font-bold text-white mb-3">MindForge 1.0</h1>
+                <h1 className="text-4xl font-bold text-white mb-3">MindForge 2.0</h1>
                 <p className="text-gray-400 text-lg max-w-2xl mx-auto">
                     Your personal AI operating system and knowledge vault.
                 </p>
@@ -23,7 +23,7 @@ export default function About() {
                     <Info className="text-accent" /> Why MindForge?
                 </h2>
                 <p className="text-gray-300 text-lg leading-relaxed">
-                    Most knowledge bases simply store information. MindForge is designed to let you <strong>interact with your knowledge</strong> — search it, connect it, and ask AI about it. It acts as a second brain that remembers everything you upload and helps you synthesize new ideas instantly.
+                    Most knowledge bases simply store information. MindForge is designed to let you <strong>interact with your knowledge</strong> — search it, connect it, and ask AI about it. It acts as a second brain that remembers everything you upload, builds daily quizzes to improve your memory, and helps you synthesize new ideas instantly.
                 </p>
             </div>
 
@@ -61,6 +61,20 @@ export default function About() {
                         <p className="text-gray-400 text-sm leading-relaxed">Converse naturally with your vault. The AI cites exact sources when retrieving your data.</p>
                     </div>
                 </div>
+                <div className="bg-surface p-5 rounded-lg border border-border flex items-start gap-4">
+                    <Brain className="text-[#FFD166] shrink-0 mt-1" size={24} />
+                    <div>
+                        <h3 className="text-white font-medium mb-1">Active Recall & SM-2</h3>
+                        <p className="text-gray-400 text-sm leading-relaxed">AI automatically generates daily quizzes from your notes. SM-2 algorithm spaces out reviews to optimize retention.</p>
+                    </div>
+                </div>
+                <div className="bg-surface p-5 rounded-lg border border-border flex items-start gap-4">
+                    <Sparkles className="text-[#06D6A0] shrink-0 mt-1" size={24} />
+                    <div>
+                        <h3 className="text-white font-medium mb-1">Topic Auto-Extraction</h3>
+                        <p className="text-gray-400 text-sm leading-relaxed">AI scans uploaded documents to identify core concepts, creating a customized learning path and tracking mastery.</p>
+                    </div>
+                </div>
             </div>
 
             {/* What's Coming */}
@@ -68,10 +82,10 @@ export default function About() {
                 <h2 className="text-2xl font-semibold text-white mb-6">What's Coming</h2>
                 
                 <div className="mb-6">
-                    <h3 className="text-lg font-medium text-accent mb-2">MindForge 2.0 (Phase 4)</h3>
+                    <h3 className="text-lg font-medium text-accent mb-2">Phase 5: The Network Effect</h3>
                     <ul className="list-disc list-inside text-gray-400 space-y-2 ml-2">
-                        <li><strong>AI Learning Tools:</strong> Auto-generate flashcards, summaries, and quizzes from your documents.</li>
-                        <li><strong>AI Agent System:</strong> Allow the AI to take actions on your behalf (e.g., "create a note", "organize my vault").</li>
+                        <li><strong>Interactive Knowledge Graph:</strong> A visual Force-Directed graph mapping connections between topics.</li>
+                        <li><strong>Knowledge Compiler:</strong> AI agents that synthesize relationships, prerequisites, and claims across your entire vault.</li>
                     </ul>
                 </div>
 
@@ -84,7 +98,7 @@ export default function About() {
             </div>
 
             <div className="text-center text-sm text-gray-600 mt-12">
-                MindForge — Current Version: 1.0.0
+                MindForge — Current Version: 2.0.0
             </div>
 
         </div>
