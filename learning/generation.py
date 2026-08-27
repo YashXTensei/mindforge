@@ -31,7 +31,8 @@ def extract_topics_from_text(text: str, max_topics: int = 5) -> list[str]:
     "Database Sharding", "CAP Theorem" — so it can quiz the user on them later.
     """
     try:
-        model = genai.GenerativeModel(settings.RAG_CONFIG['CHAT_MODEL'])
+        # User requested to use the VISION_MODEL (gemini-3.5-flash) for topic extraction
+        model = genai.GenerativeModel(settings.RAG_CONFIG['VISION_MODEL'])
         
         # We only send the first ~15000 chars to avoid blowing up token limits.
         # For most documents, the first few pages contain the key topics anyway.

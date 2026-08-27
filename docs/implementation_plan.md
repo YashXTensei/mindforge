@@ -1,3 +1,60 @@
+# Phase 4 Optimization Plan
+
+Phase 4 is fully working and deployed. Before starting Phase 5, I want to optimize the AI review-generation pipeline for speed, reliability, and quota management without rewriting the existing working system.
+
+## 1. Separate AI model/key for Learning tasks
+
+Currently, AI Chat and Learning/Review generation use the same Gemini setup. I want to separate the Learning workload (topic extraction, review question generation, future learning features) onto a dedicated Gemini key/model if possible. This should prevent heavy AI Chat usage from consuming the quota needed for Daily Reviews. Choose the model based on structured JSON support, latency, and available quota.
+
+## 2. Model/key fallback system
+
+Add a lightweight fallback mechanism for Learning AI requests.
+
+If the primary model/key hits a rate limit, quota limit, timeout, or temporary provider failure, automatically try the next configured model/key. Do not switch on application bugs or invalid prompts. Keep the system simple and log which model was used and when fallback occurred.
+
+## 3. Batch review question generation
+
+Currently, questions are generated through multiple sequential Gemini API calls, which causes roughly 20 seconds of waiting.
+
+Change this so multiple due topics are sent in a single API call and Gemini returns all questions in structured JSON. Start with a hard limit of around **5 questions per review** to keep token usage and latency under control. Only send relevant document chunks instead of entire documents.
+
+## 4. Pre-generate Daily Reviews with Celery
+
+Use the existing Celery + Redis setup to generate reviews in the background during the night (for example around 2 AM).
+
+The task should:
+
+* Find topics due for review.
+* Retrieve relevant chunks.
+* Generate questions.
+* Validate the response.
+* Save the `ReviewSession` and `ReviewItems` in the database.
+
+Then, when the user clicks **Start Review**, the questions should load instantly from the database instead of waiting for Gemini.
+
+The task should be idempotent, support retries and fallback models, and if overnight generation fails, the app should gracefully fall back to on-demand generation.
+
+## 5. Include mastery context in the AI prompt
+
+When generating questions, send only compact, relevant learning data for that topic, such as:
+
+* Current mastery/confidence.
+* Recent accuracy.
+* Consecutive correct answers.
+* Weak sub-concepts.
+* Target difficulty.
+
+This should help Gemini generate personalized questions that focus on weak areas without sending the user's entire learning history and wasting tokens. The backend should remain the source of truth for mastery; the AI should only generate content based on the provided state.
+
+## Priority order
+
+1. Batch question generation.
+2. Celery overnight pre-generation.
+3. Separate Learning model/key.
+4. Model/key fallback system.
+5. Mastery-aware prompting.
+
+
 # Phase 5 Implementation Plan: The Network Effect (Interactive Graph)
 
 > Last Updated: 25 August 2026
