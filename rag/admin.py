@@ -17,7 +17,11 @@ class ChatConversationAdmin(admin.ModelAdmin):
 
 @admin.register(ChatMessage)
 class ChatMessageAdmin(admin.ModelAdmin):
-    list_display = ('role', 'conversation', 'prompt_tokens', 'completion_tokens', 'created_at')
+    list_display = ('role', 'get_username', 'conversation', 'prompt_tokens', 'completion_tokens', 'created_at')
     list_filter = ('role', 'model_name')
-    search_fields = ('content', 'conversation__title')
+    search_fields = ('content', 'conversation__title', 'conversation__user__username')
     readonly_fields = ('created_at',)
+
+    def get_username(self, obj):
+        return obj.conversation.user.username
+    get_username.short_description = 'Account User'
