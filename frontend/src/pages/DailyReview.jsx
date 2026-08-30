@@ -21,15 +21,18 @@ export default function DailyReview() {
         refetchOnWindowFocus: false,
     });
 
-    // Resume from where the user left off
+    const [initialLoadDone, setInitialLoadDone] = useState(false);
+
+    // Resume from where the user left off, but only on first load
     React.useEffect(() => {
-        if (session && session.items) {
+        if (session && session.items && !initialLoadDone) {
             const firstUnanswered = session.items.findIndex(item => !item.user_answer);
             if (firstUnanswered !== -1) {
                 setCurrentIndex(firstUnanswered);
             }
+            setInitialLoadDone(true);
         }
-    }, [session]);
+    }, [session, initialLoadDone]);
 
     // Submit answer mutation
     const submitMutation = useMutation({
@@ -37,7 +40,12 @@ export default function DailyReview() {
         onSuccess: (data) => {
             setResult(data);
             queryClient.invalidateQueries(['topics']); // Refresh mastery levels
+            queryClient.invalidateQueries(['dailyReview']); // Keep session state in sync
         },
+        onError: (error) => {
+            console.error(error);
+            alert("Error: " + (error.response?.data?.error || "Failed to submit answer. Check console."));
+        }
     });
 
     // --- Edge Cases ---

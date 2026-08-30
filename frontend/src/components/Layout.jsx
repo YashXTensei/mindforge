@@ -81,7 +81,7 @@ export default function Layout() {
                 </div>
 
                 {/* Navigation */}
-                <nav className="flex flex-col gap-2 flex-grow">
+                <nav className="flex flex-col gap-2 flex-1 overflow-y-auto py-2 pr-2">
                     {navItems.map((item) => {
                         const isActive = location.pathname.startsWith(item.path);
                         return (
@@ -89,7 +89,7 @@ export default function Layout() {
                                 key={item.path} 
                                 to={item.path} 
                                 onClick={() => setIsSidebarOpen(false)} // Close menu on click in mobile
-                                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group relative
+                                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group relative shrink-0
                                     ${isActive 
                                         ? 'bg-purple-500/10 text-purple-400 font-medium' 
                                         : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'

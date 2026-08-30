@@ -143,3 +143,74 @@ Rules:
     except Exception as e:
         logger.error(f"Failed to generate question for '{topic_name}': {str(e)}")
         return None
+
+
+def generate_review_questions_batch(topics_data: list[dict]) -> list[dict]:
+    """
+    Generates multiple MCQ questions in a SINGLE API call.
+    
+    Args:
+        topics_data: List of dicts, e.g. 
+        [
+            {"topic_name": "React", "context": "...", "difficulty": 2, "mastery_id": 5},
+            ...
+        ]
+        
+    Returns:
+        List of generated question dicts matching the input order.
+    """
+    if not topics_data:
+        return []
+        
+    try:
+        model = genai.GenerativeModel(settings.RAG_CONFIG['CHAT_MODEL'])
+        
+        # Build the batch prompt
+        prompt = "Generate EXACTLY ONE multiple-choice question for each of the following topics based on their provided context.\n\n"
+        
+        for i, data in enumerate(topics_data):
+            diff_map = {1: "EASY", 2: "MEDIUM", 3: "HARD"}
+            diff_text = diff_map.get(data['difficulty'], "MEDIUM")
+            
+            prompt += f"--- TOPIC {i+1}: {data['topic_name']} ---\n"
+            prompt += f"Difficulty: {diff_text}\n"
+            prompt += f"Context: {data['context'][:3000]}\n\n" # Shorter context per topic to save tokens
+            
+        prompt += """
+Return a JSON array containing EXACTLY as many objects as there are topics requested.
+The output MUST be a valid JSON array of objects with this exact schema:
+[
+  {
+      "topic_index": <integer starting from 1 matching the topic number above>,
+      "question": "The question text",
+      "options": {"A": "First option", "B": "Second option", "C": "Third option", "D": "Fourth option"},
+      "correct_answer": "A",
+      "explanation": "Why this answer is correct"
+  }
+]
+
+Rules:
+1. You MUST return an array of objects.
+2. Ensure options are A, B, C, D.
+3. Generate exactly one question per topic.
+"""
+        response = model.generate_content(
+            prompt,
+            generation_config=genai.types.GenerationConfig(
+                temperature=0.7,
+                response_mime_type="application/json",
+            )
+        )
+        
+        questions_array = json.loads(response.text)
+        
+        # Validate output is a list
+        if not isinstance(questions_array, list):
+            logger.error("Batch generation did not return a list")
+            return []
+            
+        return questions_array
+        
+    except Exception as e:
+        logger.error(f"Failed to batch generate questions: {str(e)}")
+        return []

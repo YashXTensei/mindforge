@@ -4,7 +4,7 @@ from rest_framework.permissions import IsAuthenticated
 from django.utils import timezone
 from .models import TopicMastery, ReviewSession, ReviewItem
 from .serializers import TopicMasterySerializer, ReviewSessionSerializer
-from .generation import generate_review_question
+from .generation import generate_review_question, generate_review_questions_batch
 from .utils import build_review_context
 from .sm2 import update_sm2
 import logging
@@ -73,47 +73,62 @@ class DailyReviewView(views.APIView):
             total_items=due_topics.count()
         )
 
-        # 4. Generate questions for each due topic via Gemini
+        # 4. Generate questions for all due topics in a SINGLE batch API call
+        topics_data = []
         for mastery in due_topics:
-            # Build context text from the source documents
             context_text = ""
             for source in mastery.sources.all():
-                src_obj = source.source  # GenericForeignKey field
+                src_obj = source.source
                 if src_obj:
-                    # We grab a small snippet of the source content to send to Gemini
                     if hasattr(src_obj, 'text_content') and src_obj.text_content:
                          context_text += f"\nFrom {src_obj.title}:\n{src_obj.text_content[:2000]}"
                     elif hasattr(src_obj, 'content') and src_obj.content:
                          context_text += f"\nFrom {src_obj.title}:\n{src_obj.content[:2000]}"
             
             if not context_text.strip():
-                # Fallback if no text could be extracted
                 context_text = f"General knowledge about {mastery.topic_name}"
 
-            # Determine difficulty based on current confidence
             diff_level = 1
             if mastery.confidence_level > 0.4: diff_level = 2
             if mastery.confidence_level > 0.7: diff_level = 3
-
-            # Call Gemini!
-            q_data = generate_review_question(mastery.topic_name, context_text, diff_level)
             
-            if q_data:
-                reasoning = build_review_context(mastery)
-                
-                ReviewItem.objects.create(
-                    session=session,
-                    mastery=mastery,
-                    question_text=q_data['question'],
-                    options=q_data['options'],
-                    correct_answer=q_data['correct_answer'],
-                    explanation=q_data['explanation'],
-                    difficulty_level=diff_level,
-                    review_context=reasoning
-                )
-            else:
-                session.total_items -= 1
-                session.save()
+            topics_data.append({
+                "mastery": mastery,
+                "topic_name": mastery.topic_name,
+                "context": context_text,
+                "difficulty": diff_level
+            })
+            
+        # Call Gemini once for all topics!
+        questions_batch = generate_review_questions_batch(topics_data)
+        
+        # Save valid questions to the database
+        successful_items = 0
+        
+        if questions_batch:
+            # Map them back using topic_index
+            for q_data in questions_batch:
+                idx = q_data.get('topic_index', 0) - 1
+                if 0 <= idx < len(topics_data):
+                    mastery_info = topics_data[idx]
+                    mastery = mastery_info['mastery']
+                    
+                    reasoning = build_review_context(mastery)
+                    
+                    ReviewItem.objects.create(
+                        session=session,
+                        mastery=mastery,
+                        question_text=q_data['question'],
+                        options=q_data['options'],
+                        correct_answer=q_data['correct_answer'],
+                        explanation=q_data['explanation'],
+                        difficulty_level=mastery_info['difficulty'],
+                        review_context=reasoning
+                    )
+                    successful_items += 1
+        
+        session.total_items = successful_items
+        session.save()
 
         # If Gemini failed on all questions (rare but possible)
         if session.total_items == 0:
