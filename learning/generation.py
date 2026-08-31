@@ -55,7 +55,8 @@ Text to analyze:
             generation_config=genai.types.GenerationConfig(
                 temperature=0.1,  # Low temp = consistent, predictable JSON output
                 response_mime_type="application/json",  # Forces Gemini to return valid JSON
-            )
+            ),
+            request_options={"timeout": 15}
         )
         
         topics = json.loads(response.text)
@@ -123,7 +124,8 @@ Rules:
             generation_config=genai.types.GenerationConfig(
                 temperature=0.7,  # Slightly higher temp for variety in questions
                 response_mime_type="application/json",
-            )
+            ),
+            request_options={"timeout": 15}
         )
         
         question_data = json.loads(response.text)
@@ -199,7 +201,8 @@ Rules:
             generation_config=genai.types.GenerationConfig(
                 temperature=0.7,
                 response_mime_type="application/json",
-            )
+            ),
+            request_options={"timeout": 30}
         )
         
         questions_array = json.loads(response.text)

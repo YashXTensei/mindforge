@@ -142,7 +142,10 @@ def chat(conversation_id, user_message, user):
 
     try:
         chat_session = model.start_chat(history=gemini_history)
-        response = chat_session.send_message(user_message)
+        response = chat_session.send_message(
+            user_message,
+            request_options={"timeout": 15}
+        )
 
         assistant_content = response.text
         
