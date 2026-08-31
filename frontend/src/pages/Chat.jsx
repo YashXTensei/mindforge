@@ -4,6 +4,9 @@ import { sendChatMessage, fetchConversations, fetchConversation, deleteConversat
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkBreaks from 'remark-breaks';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css';
 import {
     Send, Plus, MessageSquare, Trash2, Loader2, Bot, User,
     FileText, StickyNote, ExternalLink, ChevronRight, Sparkles,
@@ -274,8 +277,11 @@ export default function Chat() {
                                                 </button>
                                             )}
                                         </div>
-                                        <div className="mt-1 text-gray-200 text-sm leading-relaxed prose prose-invert prose-sm max-w-none">
-                                            <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
+                                        <div className="mt-1 text-gray-200 text-sm leading-relaxed prose prose-invert prose-sm max-w-none math-render-fix">
+                                            <ReactMarkdown 
+                                                remarkPlugins={[remarkGfm, remarkBreaks, remarkMath]}
+                                                rehypePlugins={[[rehypeKatex, { strict: false, throwOnError: false }]]}
+                                            >
                                                 {msg.content}
                                             </ReactMarkdown>
                                         </div>

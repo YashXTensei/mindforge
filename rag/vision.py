@@ -88,3 +88,61 @@ def describe_image(image_path: str) -> dict:
             "description": f"Error during vision analysis: {str(e)}",
             "ocr_text": ""
         }
+
+def describe_pdf_pages_batch(image_bytes_list: list[bytes]) -> list[str]:
+    """
+    Takes a list of JPEG image bytes (from PDF pages) and returns a list of OCR text strings.
+    Sends all images in a single API call to save time and quota.
+    """
+    if not image_bytes_list:
+        return []
+
+    model_name = settings.RAG_CONFIG.get('VISION_MODEL', 'gemini-3.6-flash')
+    
+    prompt = f"""
+You are an expert OCR AI. I am providing you with {len(image_bytes_list)} images, which are scanned pages from a document.
+Your task is to transcribe ALL the text and math equations visible on each page.
+If a page contains math, transcribe it clearly.
+
+Provide your response as a valid JSON array of strings, where each string corresponds to the text of one page, in the exact order they were provided.
+The array must have exactly {len(image_bytes_list)} elements.
+If a page has no text, return an empty string for that element.
+
+Return ONLY the JSON array, with no markdown formatting.
+    """
+
+    content_parts = [prompt]
+    for img_bytes in image_bytes_list:
+        content_parts.append({
+            "mime_type": "image/jpeg",
+            "data": img_bytes,
+        })
+
+    try:
+        model = genai.GenerativeModel(model_name)
+        logger.info(f"Sending batch of {len(image_bytes_list)} pages to Gemini Vision")
+        
+        response = model.generate_content(
+            content_parts,
+            generation_config=genai.types.GenerationConfig(
+                temperature=0.1,
+                response_mime_type="application/json",
+            ),
+            request_options={"timeout": 60} # Longer timeout for batch images
+        )
+
+        text_response = response.text.strip()
+        result = json.loads(text_response)
+        
+        if isinstance(result, list) and len(result) == len(image_bytes_list):
+            return result
+        else:
+            logger.error(f"Batch OCR returned {len(result) if isinstance(result, list) else 'non-list'} items, expected {len(image_bytes_list)}")
+            # Fallback: return what we got padded with empty strings
+            if isinstance(result, list):
+                return result + [""] * (len(image_bytes_list) - len(result))
+            return [""] * len(image_bytes_list)
+
+    except Exception as e:
+        logger.error(f"Gemini Vision API batch error: {str(e)}")
+        return [""] * len(image_bytes_list)

@@ -6,6 +6,9 @@ import { triggerProcessing } from '../api/rag';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkBreaks from 'remark-breaks';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css';
 import toast from 'react-hot-toast';
 import { ArrowLeft, Edit2, Save, X, Sparkles, Loader2 } from 'lucide-react';
 
@@ -158,8 +161,13 @@ export default function NoteView() {
                         ))}
                     </div>
 
-                    <div className="bg-surface-card p-8 rounded-xl border border-border min-h-[300px] leading-relaxed text-gray-300 prose prose-invert max-w-none">
-                        <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>{note.content}</ReactMarkdown>
+                    <div className="bg-surface-card p-8 rounded-xl border border-border min-h-[300px] leading-relaxed text-gray-300 prose prose-invert max-w-none math-render-fix">
+                        <ReactMarkdown 
+                            remarkPlugins={[remarkGfm, remarkBreaks, remarkMath]}
+                            rehypePlugins={[[rehypeKatex, { strict: false, throwOnError: false }]]}
+                        >
+                            {note.content}
+                        </ReactMarkdown>
                     </div>
                 </div>
             ) : (
