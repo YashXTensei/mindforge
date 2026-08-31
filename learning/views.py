@@ -45,8 +45,12 @@ class DailyReviewView(views.APIView):
         ).first()
         
         if session:
-            serializer = ReviewSessionSerializer(session)
-            return Response(serializer.data)
+            if session.items.count() == 0:
+                # Cleanup broken orphaned session from a previous failed LLM call
+                session.delete()
+            else:
+                serializer = ReviewSessionSerializer(session)
+                return Response(serializer.data)
 
         # 2. No active session. Find topics due for review today.
         due_topics = TopicMastery.objects.filter(
@@ -108,7 +112,11 @@ class DailyReviewView(views.APIView):
         if questions_batch:
             # Map them back using topic_index
             for q_data in questions_batch:
-                idx = q_data.get('topic_index', 0) - 1
+                try:
+                    idx = int(q_data.get('topic_index', 0)) - 1
+                except (ValueError, TypeError):
+                    continue
+                    
                 if 0 <= idx < len(topics_data):
                     mastery_info = topics_data[idx]
                     mastery = mastery_info['mastery']
@@ -118,10 +126,10 @@ class DailyReviewView(views.APIView):
                     ReviewItem.objects.create(
                         session=session,
                         mastery=mastery,
-                        question_text=q_data['question'],
-                        options=q_data['options'],
-                        correct_answer=q_data['correct_answer'],
-                        explanation=q_data['explanation'],
+                        question_text=q_data.get('question', ''),
+                        options=q_data.get('options', {}),
+                        correct_answer=q_data.get('correct_answer', 'A'),
+                        explanation=q_data.get('explanation', ''),
                         difficulty_level=mastery_info['difficulty'],
                         review_context=reasoning
                     )
