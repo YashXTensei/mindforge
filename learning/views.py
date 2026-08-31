@@ -96,11 +96,23 @@ class DailyReviewView(views.APIView):
             if mastery.confidence_level > 0.4: diff_level = 2
             if mastery.confidence_level > 0.7: diff_level = 3
             
+            # Anti-Repeat: Fetch last 4 questions asked for this topic
+            prev_questions = list(
+                ReviewItem.objects.filter(mastery=mastery)
+                .order_by('-id')
+                .values_list('question_text', flat=True)[:4]
+            )
+            
             topics_data.append({
                 "mastery": mastery,
                 "topic_name": mastery.topic_name,
                 "context": context_text,
-                "difficulty": diff_level
+                "difficulty": diff_level,
+                "prev_questions": prev_questions,
+                "confidence": round(mastery.confidence_level * 100),
+                "accuracy": round(mastery.accuracy * 100),
+                "total_reviews": mastery.total_reviews,
+                "consecutive_correct": mastery.consecutive_correct,
             })
             
         # Call Gemini once for all topics!

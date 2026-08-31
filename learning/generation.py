@@ -176,7 +176,20 @@ def generate_review_questions_batch(topics_data: list[dict]) -> list[dict]:
             
             prompt += f"--- TOPIC {i+1}: {data['topic_name']} ---\n"
             prompt += f"Difficulty: {diff_text}\n"
-            prompt += f"Context: {data['context'][:3000]}\n\n" # Shorter context per topic to save tokens
+            
+            # Mastery context — helps AI gauge where the user stands
+            prompt += f"User Stats: Confidence {data.get('confidence', 0)}%, Accuracy {data.get('accuracy', 0)}%, "
+            prompt += f"Reviewed {data.get('total_reviews', 0)} times, "
+            prompt += f"Streak: {data.get('consecutive_correct', 0)} correct in a row\n"
+            
+            # Anti-repeat — send last 3-4 questions so AI doesn't repeat them
+            prev_qs = data.get('prev_questions', [])
+            if prev_qs:
+                prompt += "Previously asked questions (DO NOT repeat these, ask something DIFFERENT):\n"
+                for j, pq in enumerate(prev_qs, 1):
+                    prompt += f"  {j}. {pq}\n"
+            
+            prompt += f"Context: {data['context'][:3000]}\n\n"
             
         prompt += """
 Return a JSON array containing EXACTLY as many objects as there are topics requested.
@@ -195,6 +208,8 @@ Rules:
 1. You MUST return an array of objects.
 2. Ensure options are A, B, C, D.
 3. Generate exactly one question per topic.
+4. DO NOT repeat any previously asked question. Ask about a DIFFERENT aspect of the topic.
+5. Tailor question complexity based on the user's stats — if accuracy is high, push harder within the given difficulty level.
 """
         response = model.generate_content(
             prompt,
