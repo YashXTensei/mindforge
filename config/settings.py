@@ -222,15 +222,14 @@ RAG_CONFIG = {
     'EMBEDDING_BATCH_SIZE': 96,
     'EMBEDDING_MAX_RETRIES': 3,
     'CHAT_PROVIDER': 'gemini',
-    'CHAT_MODEL': env(
-    'GEMINI_CHAT_MODEL',
-    default='gemini-3.6-flash'
-),
+    'CHAT_MODEL': env('GEMINI_CHAT_MODEL', default='gemini-3.7-flash'),
+    'QUESTION_MODEL': env('GEMINI_QUESTION_MODEL', default='gemini-3.6-flash'),
+    'VISION_MODEL': env('GEMINI_VISION_MODEL', default='gemini-3.5-flash-lite'),
+    'EXTRACTION_MODEL': env('GEMINI_EXTRACTION_MODEL', default='gemini-3.5-flash'),
     'CHUNK_SIZE': 500,        # tokens per chunk
     'CHUNK_OVERLAP': 50,      # overlap tokens between chunks
     'SEARCH_TOP_K': 10,       # semantic search results count
     'SIMILARITY_THRESHOLD': 0.30, # Minimum similarity score (0.0 to 1.0) to consider a match valid
-    'VISION_MODEL': env('GEMINI_VISION_MODEL', default='gemini-3.6-flash'),
     'MAX_IMAGE_SIZE_MB': 5,   # max size for processing images
 }
 

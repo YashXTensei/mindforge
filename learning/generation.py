@@ -31,8 +31,8 @@ def extract_topics_from_text(text: str, max_topics: int = 5) -> list[str]:
     "Database Sharding", "CAP Theorem" — so it can quiz the user on them later.
     """
     try:
-        # User requested to use the VISION_MODEL (gemini-3.5-flash) for topic extraction
-        model = genai.GenerativeModel(settings.RAG_CONFIG['VISION_MODEL'])
+        # User requested to use the EXTRACTION_MODEL (gemini-3.5-flash-lite) for topic extraction
+        model = genai.GenerativeModel(settings.RAG_CONFIG['EXTRACTION_MODEL'])
         
         # We only send the first ~15000 chars to avoid blowing up token limits.
         # For most documents, the first few pages contain the key topics anyway.
@@ -88,7 +88,7 @@ def generate_review_question(topic_name: str, context_text: str, difficulty: int
     not generic React trivia from the internet.
     """
     try:
-        model = genai.GenerativeModel(settings.RAG_CONFIG['CHAT_MODEL'])
+        model = genai.GenerativeModel(settings.RAG_CONFIG['QUESTION_MODEL'])
         
         # Map difficulty int to descriptive instruction for Gemini
         difficulty_map = {
@@ -165,7 +165,7 @@ def generate_review_questions_batch(topics_data: list[dict]) -> list[dict]:
         return []
         
     try:
-        model = genai.GenerativeModel(settings.RAG_CONFIG['CHAT_MODEL'])
+        model = genai.GenerativeModel(settings.RAG_CONFIG['QUESTION_MODEL'])
         
         # Build the batch prompt
         prompt = "Generate EXACTLY ONE multiple-choice question for each of the following topics based on their provided context.\n\n"
