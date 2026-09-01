@@ -222,7 +222,7 @@ RAG_CONFIG = {
     'EMBEDDING_BATCH_SIZE': 96,
     'EMBEDDING_MAX_RETRIES': 3,
     'CHAT_PROVIDER': 'gemini',
-    'CHAT_MODEL': env('GEMINI_CHAT_MODEL', default='gemini-3.7-flash'),
+    'CHAT_MODEL': env('GEMINI_CHAT_MODEL', default='gemini-3.6-flash'),
     'QUESTION_MODEL': env('GEMINI_QUESTION_MODEL', default='gemini-3.6-flash'),
     'VISION_MODEL': env('GEMINI_VISION_MODEL', default='gemini-3.5-flash-lite'),
     'EXTRACTION_MODEL': env('GEMINI_EXTRACTION_MODEL', default='gemini-3.5-flash'),
