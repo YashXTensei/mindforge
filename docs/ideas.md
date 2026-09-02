@@ -1,10 +1,15 @@
-1 : photo recognition in pdfs
+# features that may helpful :
+
+1 : photo recognition in pdfs ✅done
 
 2 : celery night worker for improving UX and reducing API rate limit chances
 
 3 : API Key/Model fallback system
 
-bugs to be fixed :
+4 : The Professional Way (Direct Upload): Agar tumhe isko permanently fix karna hai, to hume ek architectural change karna padega. "Direct Browser Upload" — jisme React frontend file ko Heroku bhejne ke bajaye, seedha Cloudinary ko upload karega (kyunki Cloudinary me koi 30s timeout nahi hai), aur fir Heroku ko bas us file ka link (URL) bhej dega
+
+# bugs to be fixed :
+
 1 : pdf delete karne se us pdf se related topics delete nahi hote 
 
 2 : aisa hona chahiye ki photos and pdfs jo ham chahiye sirf unse hi topics extract ho bakiyo se na ho , kuch personal use ya bas store ke liye bhi rakhte ha diff than studies 

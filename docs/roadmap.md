@@ -220,16 +220,16 @@ Build a spaced repetition engine with adaptive, context-aware review sessions. T
 
 ## Exit Criteria
 
-- [ ] Document upload auto-extracts topics and creates TopicMastery records
-- [ ] SM-2 algorithm correctly schedules next_review_date
-- [ ] Daily Review generates adaptive questions with difficulty scaling
-- [ ] "Why am I reviewing this?" context is accurate and human-readable
-- [ ] Weak sub-concepts are tracked and specifically targeted
+- [x] Document upload auto-extracts topics and creates TopicMastery records
+- [x] SM-2 algorithm correctly schedules next_review_date
+- [x] Daily Review generates adaptive questions with difficulty scaling
+- [x] "Why am I reviewing this?" context is accurate and human-readable
+- [x] Weak sub-concepts are tracked and specifically targeted
 - [x] Review history is persisted and queryable
 
 ---
 
-✅done {date : 25th august 2026}
+✅done {date : 31st august 2026}
 
 # Phase 5 — Knowledge Compiler & Graph ⭐⭐
 
@@ -243,11 +243,11 @@ Transform raw text (chunks, embeddings) into a structured knowledge representati
 
 ## Features
 
-- **Knowledge Compiler**: When content is processed, extract not just topics but structured **claims** with evidence. Example: Claim: "useEffect runs after render" → Evidence: React docs (page 3), your note (July 12), uploaded lecture PDF.
-- **Prerequisite Chain Detection**: Auto-detect prerequisite relationships. "You can't understand useEffect without understanding component lifecycle." Stored as directed edges in the topic graph.
-- **Interactive Knowledge Graph (D3.js)**: Force-directed graph where nodes = topics, color = mastery level (red→yellow→green), size = source document count, directed edges = prerequisite/relationship links.
-- **Knowledge Gap Analysis**: User asks "What am I missing to understand distributed systems?" → MindForge traverses the prerequisite graph, checks mastery levels, finds missing nodes → "You understand replication and partitioning, but your graph shows a missing prerequisite between consensus and leader election."
-- **Blind Spot Detection**: Highlights topics with documents but zero reviews, isolated nodes with no connections, and prerequisite gaps blocking deeper understanding.
+- **Knowledge Compiler**: When content is processed, extract structured **claims** with evidence, and relationships (`PREREQ`, `RELATED`) between topics. Safe, idempotent updates to avoid duplicates.
+- **ID-Based Relationship Detection**: AI maps relationships using existing `TopicMastery` IDs and names rather than relying solely on fuzzy matching to ensure accurate graph edges.
+- **Interactive Knowledge Graph (2D)**: Force-directed 2D graph (`react-force-graph-2d`) where nodes = topics, color = mastery level (red→yellow→green), and directed edges = prerequisite/relationship links with recorded reasoning.
+- **Knowledge Gap Analysis**: User asks "What am I missing to understand distributed systems?" → MindForge traverses the prerequisite graph, checks mastery levels, finds missing nodes.
+- **Blind Spot Detection**: Highlights isolated nodes with no connections, and prerequisite gaps blocking deeper understanding.
 
 ## What You'll Learn
 
@@ -375,7 +375,7 @@ Week 28-30    → Phase 7 (Study Planner & Brief)
 | Git + GitHub | Every phase |
 | Environment variables | Phase 0 |
 | Basic CI (GitHub Actions) | Phase 1 |
-| Deploy to Heroku/Vercel | Phase 3 (MIP) |
+| Deploy to Heroku/Vercel | Phase 3 (MIP) ✅ |
 
 ---
 

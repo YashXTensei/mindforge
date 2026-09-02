@@ -43,9 +43,10 @@ This document tracks everything built in MindForge, what remains to be built, an
 ## 🔴 What is Pending (To-Do)
 
 ### Phase 5 (The Network Effect - Interactive Graph)
-- [ ] Build 3D Force-Directed Graph UI (using `react-force-graph`).
-- [ ] Backend graph extraction: LLM analyzes connections between chunks/topics and builds semantic nodes and edges.
+- [ ] Backend graph extraction: Knowledge Compiler analyzes connections between chunks/topics and builds semantic nodes (Claims) and edges (Relationships like PREREQ, RELATED).
+- [ ] Build 2D Force-Directed Graph UI (using `react-force-graph-2d`).
 - [ ] Implement graph filtering, zooming, and node click actions.
+- [ ] Knowledge Gap Analysis & Blind Spot Detection.
 
 ### Phase 6 (Intelligent Agents - "Your Second Brain at Work")
 - [ ] **Curiosity Engine:** Background agent that finds connections between old and new notes and sends "Did you know?" notifications.
@@ -54,13 +55,22 @@ This document tracks everything built in MindForge, what remains to be built, an
 
 ### Phase 7 (Polish, Security & Deployment)
 - [ ] Comprehensive Testing (`pytest`).
-- [ ] Setup production environments (Separate `settings.py` for dev/prod).
-- [ ] Vercel/Heroku pipeline tuning.
 - [ ] UI/UX final touch-ups (skeletons, dark mode consistency).
 
 ---
 
 ## 📅 Chronological Changelog
+
+### August 31 - September 1, 2026 (Deployment, Math OCR, Multi-Model Routing & Polish)
+- **Deployment & Cloudinary:** Configured production environment with Heroku, PostgreSQL, Redis (Celery), and Cloudinary `RawMediaCloudinaryStorage`.
+- **Advanced OCR (Math PDFs):** PyMuPDF `get_text` falls back to generating JPEGs for empty/scanned pages. Built `describe_pdf_pages_batch` in `rag/vision.py` to send batches of 10 pages to Gemini Vision, drastically improving math symbol and scanned document transcription.
+- **Frontend Math Rendering:** Integrated `remark-math` and `rehype-katex` in `ReactMarkdown`. Configured `{strict: false}` to gracefully handle malformed AI block boundaries without red crash screens.
+- **Multi-Model Routing:** Split AI responsibilities across specific models to optimize speed and cost:
+  - `CHAT_MODEL` (gemini-3.7-flash) for AI Chat
+  - `QUESTION_MODEL` (gemini-3.6-flash) for Quiz Generation
+  - `VISION_MODEL` & `EXTRACTION_MODEL` (gemini-3.5-flash-lite) for OCR and Topic Extraction
+- **API Stability:** Added explicit 45s timeouts to `google.generativeai` calls to prevent Gunicorn workers from locking up on Heroku. Added context (previous 4 questions and user mastery stats) to batch question generation to prevent repetitive questions.
+
 
 ### July 30 - August 8, 2026 (Foundation & RAG Engine Complete)
 - Setup Django, Celery, Redis, and PostgreSQL (`pgvector`).
