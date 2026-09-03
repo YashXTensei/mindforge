@@ -24,6 +24,7 @@ export default function NoteView() {
     const [content, setContent] = useState('');
     const [categoryId, setCategoryId] = useState('');
     const [selectedTags, setSelectedTags] = useState([]);
+    const [extractTopics, setExtractTopics] = useState(true);
 
     // Fetch Note Data
     const { data: note, isLoading, isError } = useQuery({
@@ -49,6 +50,7 @@ export default function NoteView() {
             setContent(note.content);
             setCategoryId(note.category?.id || '');
             setSelectedTags(note.tags_detail?.map(t => t.id) || []);
+            setExtractTopics(note.extract_topics ?? true);
         }
     }, [note, isEditing]);
 
@@ -79,7 +81,7 @@ export default function NoteView() {
     const handleSave = () => {
         updateMutation.mutate({
             id,
-            noteData: { title, content, category: categoryId || null, tags: selectedTags }
+            noteData: { title, content, category: categoryId || null, tags: selectedTags, extract_topics: extractTopics }
         });
     };
 
@@ -197,6 +199,19 @@ export default function NoteView() {
                                 #{tag.name}
                             </button>
                         ))}
+                    </div>
+
+                    <div className="flex items-center gap-2 mt-2 mb-2">
+                        <input 
+                            type="checkbox" 
+                            id="extractTopics" 
+                            checked={extractTopics}
+                            onChange={(e) => setExtractTopics(e.target.checked)}
+                            className="h-4 w-4 rounded border-gray-700 bg-gray-900 text-purple-600 focus:ring-purple-500 focus:ring-offset-gray-900"
+                        />
+                        <label htmlFor="extractTopics" className="text-sm text-gray-300">
+                            Extract topics for Spaced Repetition (Study Material)
+                        </label>
                     </div>
 
                     <textarea 

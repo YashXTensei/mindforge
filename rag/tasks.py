@@ -211,7 +211,7 @@ def process_note(self, note_id):
         # ── Step 3: Generate Embeddings ──
         note.update_status('embedding')
 
-        chunk_texts = [c['content'] for c in ch*unks]
+        chunk_texts = [c['content'] for c in chunks]
         embeddings = generate_embeddings(chunk_texts)
 
         # ── Step 4: Save Chunks to DB ──

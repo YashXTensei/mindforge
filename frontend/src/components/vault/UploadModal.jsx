@@ -26,6 +26,7 @@ export function UploadModal({
   
   // Document specific
   const [selectedFile, setSelectedFile] = useState(null);
+  const [extractTopics, setExtractTopics] = useState(true);
   
   // Resource specific
   const [url, setUrl] = useState('');
@@ -45,6 +46,7 @@ export function UploadModal({
         
         if (activeTab === 'documents') {
           setSelectedFile(null); // Force re-upload if they want to change file
+          setExtractTopics(editingItem.extract_topics ?? true);
         } else {
           setUrl(editingItem.url || '');
           setResourceType(editingItem.resource_type || 'other');
@@ -56,6 +58,7 @@ export function UploadModal({
         setCategory('');
         setSelectedTags([]);
         setSelectedFile(null);
+        setExtractTopics(true);
         setUrl('');
         setResourceType('other');
       }
@@ -70,6 +73,7 @@ export function UploadModal({
       if (selectedFile) formData.append('file', selectedFile);
       if (description) formData.append('description', description);
       if (category) formData.append('category', category);
+      formData.append('extract_topics', extractTopics);
       selectedTags.forEach(tagId => formData.append('tags', tagId));
       onSubmitDocument(formData); 
     } else {
@@ -147,16 +151,30 @@ export function UploadModal({
 
         {/* File Input for Document */}
         {activeTab === 'documents' && (
-          <div className="flex flex-col gap-1 w-full">
-            <label className="text-sm font-medium text-gray-300">File</label>
-            <input
-              type="file"
-              accept=".pdf,.png,.jpg,.jpeg,.webp"
-              required={!editingItem}
-              onChange={(e) => setSelectedFile(e.target.files[0])}
-              className="text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-purple-600/10 file:text-purple-400 hover:file:bg-purple-600/20"
-            />
-          </div>
+          <>
+            <div className="flex flex-col gap-1 w-full">
+              <label className="text-sm font-medium text-gray-300">File</label>
+              <input
+                type="file"
+                accept=".pdf,.png,.jpg,.jpeg,.webp"
+                required={!editingItem}
+                onChange={(e) => setSelectedFile(e.target.files[0])}
+                className="text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-purple-600/10 file:text-purple-400 hover:file:bg-purple-600/20"
+              />
+            </div>
+            <div className="flex items-center gap-2 mt-2">
+              <input 
+                type="checkbox" 
+                id="extractTopics" 
+                checked={extractTopics}
+                onChange={(e) => setExtractTopics(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-700 bg-gray-900 text-purple-600 focus:ring-purple-500 focus:ring-offset-gray-900"
+              />
+              <label htmlFor="extractTopics" className="text-sm text-gray-300">
+                Extract topics for Spaced Repetition (Study Material)
+              </label>
+            </div>
+          </>
         )}
 
         {/* Resource Type */}
