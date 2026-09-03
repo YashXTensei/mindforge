@@ -13,7 +13,7 @@ class DocumentSerializer(serializers.ModelSerializer): # Name changed
         model = Document # Model changed
         fields = [
             'id', 'title', 'file', 'description', 'category', 'category_detail',
-            'tags', 'tags_detail', 'file_size', 'page_count', 'is_favorite', 
+            'tags', 'tags_detail', 'file_size', 'page_count', 'is_favorite', 'extract_topics',
             'processing_status', 'processed_at',
             'created_at', 'updated_at'
         ]
@@ -72,6 +72,6 @@ class ResourceSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'title', 'description', 'url', 'resource_type',
             'category', 'category_detail', 'tags', 'tags_detail',
-            'is_favorite', 'created_at', 'updated_at'
+            'is_favorite', 'extract_topics', 'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']

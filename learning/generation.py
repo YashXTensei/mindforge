@@ -17,27 +17,24 @@ logger = logging.getLogger(__name__)
 genai.configure(api_key=settings.GEMINI_API_KEY)
 
 
-def extract_topics_from_text(text: str, max_topics: int = 5) -> list[str]:
+def extract_topics_from_text(text: str) -> list[str]:
     """
     Uses Gemini to extract core learning topics from a given text.
     
     Called by: rag/tasks.py after chunking is complete.
     Input: The raw text extracted from a PDF/Note.
     Output: A list of topic strings like ["React Hooks", "JWT Authentication"].
-    
-    WHY THIS EXISTS:
-    When a user uploads a PDF about "System Design", we don't want to just embed it.
-    We want MindForge to KNOW that this PDF contains topics like "Load Balancing", 
-    "Database Sharding", "CAP Theorem" — so it can quiz the user on them later.
     """
     try:
         # User requested to use the EXTRACTION_MODEL (gemini-3.5-flash-lite) for topic extraction
         model = genai.GenerativeModel(settings.RAG_CONFIG['EXTRACTION_MODEL'])
         
-        # We only send the first ~15000 chars to avoid blowing up token limits.
-        # For most documents, the first few pages contain the key topics anyway.
-        trimmed_text = text[:15000]
+        # Dynamically calculate max topics based on document length.
+        # Assume ~3000 chars per page. We want approx 1 topic per page, min 5, max 30.
+        char_length = len(text)
+        max_topics = max(5, min(30, char_length // 3000))
         
+        # We can pass the whole text because Gemini has a massive context window (1M+ tokens)
         prompt = f"""Analyze the following text and extract up to {max_topics} core learning topics or concepts.
 These topics will be used in a spaced repetition learning system.
 
@@ -45,10 +42,11 @@ Rules:
 1. Keep topics concise (1-4 words max).
 2. Focus on foundational concepts, not trivial details.
 3. Make them specific enough to be testable (e.g., 'React useEffect' instead of just 'React').
-4. Return ONLY a valid JSON list of strings, nothing else.
+4. If the text is very long, extract the most relevant and important {max_topics} topics.
+5. Return ONLY a valid JSON list of strings, nothing else.
 
 Text to analyze:
-{trimmed_text}"""
+{text}"""
         
         response = model.generate_content(
             prompt,

@@ -27,11 +27,13 @@ class BaseKnowledge(models.Model):
     )
     tags = models.ManyToManyField(Tag, blank=True, related_name='%(class)ss')
     is_favorite = models.BooleanField(default=False)
+    extract_topics = models.BooleanField(default=True, help_text='If True, AI will extract topics for spaced repetition.')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    # Automatically delete related chunks when this object is deleted
+    # Automatically delete related chunks and topic sources when this object is deleted
     chunks = GenericRelation('rag.Chunk', related_query_name='%(class)s_chunks')
+    topic_sources = GenericRelation('learning.TopicSource', related_query_name='%(class)s_topic_sources')
 
     class Meta:
         abstract = True  # <-- No table created for this model!
