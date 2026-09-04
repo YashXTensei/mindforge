@@ -25,3 +25,51 @@ def trigger_document_processing(sender, instance, created, **kwargs):
             process_document.delay(instance.id)
 
         transaction.on_commit(queue_task)
+    else:
+        # If not created and file not changed, maybe title changed. Update chunks!
+        def update_chunks():
+            from .models import Chunk
+            from django.contrib.contenttypes.models import ContentType
+            ctype = ContentType.objects.get_for_model(Document)
+            Chunk.objects.filter(content_type=ctype, object_id=instance.id).update(source_title=instance.title)
+        
+        transaction.on_commit(update_chunks)
+
+from notes.models import Note
+
+@receiver(post_save, sender=Note)
+def update_note_chunks(sender, instance, created, **kwargs):
+    """
+    When a Note is renamed, update its chunk source_titles.
+    Notes are processed manually, so we don't auto-queue processing here.
+    """
+    if not created:
+        def update_chunks():
+            from .models import Chunk
+            from django.contrib.contenttypes.models import ContentType
+            ctype = ContentType.objects.get_for_model(Note)
+            Chunk.objects.filter(content_type=ctype, object_id=instance.id).update(source_title=instance.title)
+        
+        transaction.on_commit(update_chunks)
+
+from django.db.models.signals import post_delete
+
+@receiver(post_delete, sender=Document)
+@receiver(post_delete, sender=Note)
+def cleanup_on_delete(sender, instance, **kwargs):
+    """
+    Ensure all chunks and topic sources associated with a Document or Note are completely 
+    deleted when the source document is deleted, preventing ghost context.
+    """
+    from .models import Chunk
+    from learning.models import TopicSource
+    from django.contrib.contenttypes.models import ContentType
+    
+    ctype = ContentType.objects.get_for_model(sender)
+    
+    # Explicitly delete chunks
+    Chunk.objects.filter(content_type=ctype, object_id=instance.id).delete()
+    
+    # Explicitly delete topic sources (this will trigger the post_delete signal in learning 
+    # to clean up orphaned TopicMastery objects)
+    TopicSource.objects.filter(content_type=ctype, object_id=instance.id).delete()
