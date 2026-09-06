@@ -27,13 +27,14 @@ def trigger_document_processing(sender, instance, created, **kwargs):
         transaction.on_commit(queue_task)
     else:
         # If not created and file not changed, maybe title changed. Update chunks!
-        def update_chunks():
-            from .models import Chunk
-            from django.contrib.contenttypes.models import ContentType
-            ctype = ContentType.objects.get_for_model(Document)
-            Chunk.objects.filter(content_type=ctype, object_id=instance.id).update(source_title=instance.title)
-        
-        transaction.on_commit(update_chunks)
+        if instance.title != getattr(instance, '_original_title', None):
+            def update_chunks():
+                from .models import Chunk
+                from django.contrib.contenttypes.models import ContentType
+                ctype = ContentType.objects.get_for_model(Document)
+                Chunk.objects.filter(content_type=ctype, object_id=instance.id).update(source_title=instance.title)
+            
+            transaction.on_commit(update_chunks)
 
 from notes.models import Note
 
@@ -44,13 +45,14 @@ def update_note_chunks(sender, instance, created, **kwargs):
     Notes are processed manually, so we don't auto-queue processing here.
     """
     if not created:
-        def update_chunks():
-            from .models import Chunk
-            from django.contrib.contenttypes.models import ContentType
-            ctype = ContentType.objects.get_for_model(Note)
-            Chunk.objects.filter(content_type=ctype, object_id=instance.id).update(source_title=instance.title)
-        
-        transaction.on_commit(update_chunks)
+        if instance.title != getattr(instance, '_original_title', None):
+            def update_chunks():
+                from .models import Chunk
+                from django.contrib.contenttypes.models import ContentType
+                ctype = ContentType.objects.get_for_model(Note)
+                Chunk.objects.filter(content_type=ctype, object_id=instance.id).update(source_title=instance.title)
+            
+            transaction.on_commit(update_chunks)
 
 from django.db.models.signals import post_delete
 

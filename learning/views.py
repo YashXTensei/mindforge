@@ -80,15 +80,23 @@ class DailyReviewView(views.APIView):
         # 4. Generate questions for all due topics in a SINGLE batch API call
         topics_data = []
         for mastery in due_topics:
+            # SOURCE-FIRST CONTEXT RETRIEVAL
+            # Strategy: Use semantic search to find relevant chunks from user's documents.
+            # This works for both Documents (PDFs/images stored as chunks) and Notes.
             context_text = ""
-            for source in mastery.sources.all():
-                src_obj = source.source
-                if src_obj:
-                    if hasattr(src_obj, 'text_content') and src_obj.text_content:
-                         context_text += f"\nFrom {src_obj.title}:\n{src_obj.text_content[:2000]}"
-                    elif hasattr(src_obj, 'content') and src_obj.content:
-                         context_text += f"\nFrom {src_obj.title}:\n{src_obj.content[:2000]}"
             
+            try:
+                from rag.search import semantic_search
+                # Search the user's own chunks for content related to this topic
+                results = semantic_search(mastery.topic_name, user, top_k=3)
+                
+                if results:
+                    for r in results:
+                        context_text += f"\nFrom {r['source_title']}:\n{r['content']}\n"
+            except Exception as search_err:
+                logger.warning(f"Chunk retrieval failed for '{mastery.topic_name}': {search_err}")
+            
+            # INTELLIGENT FALLBACK: If no relevant chunks found, use general knowledge
             if not context_text.strip():
                 context_text = f"General knowledge about {mastery.topic_name}"
 
@@ -185,9 +193,9 @@ class SubmitAnswerView(views.APIView):
         item.save()
 
         # Trigger SM-2 Algorithm
-        # Quality score: 4 for correct, 1 for incorrect, 0 for skip
+        # Quality score: 5 for correct (EF increases), 1 for incorrect (EF decreases), 0 for skip
         if is_correct:
-            quality = 4
+            quality = 5
         elif user_answer == 'S':
             quality = 0
         else:
@@ -204,6 +212,9 @@ class SubmitAnswerView(views.APIView):
         answered_count = session.items.exclude(user_answer__isnull=True).count()
         if answered_count == session.total_items:
             session.completed_at = timezone.now()
+            # Calculate percentage score
+            if session.total_items > 0:
+                session.score = round((session.correct_items / session.total_items) * 100, 1)
         session.save()
 
         # Return the result with the explanation (which was hidden before)

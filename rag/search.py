@@ -64,6 +64,7 @@ def semantic_search(query, user, top_k=None):
     results = list(
         Chunk.objects
         .filter(user=user)
+        .select_related('content_type')
         .annotate(distance=CosineDistance('embedding', query_embedding))
         .filter(distance__lte=max_distance)  # THRESHOLD FIX: Ignore irrelevant kachra
         .order_by('distance')  # closest first

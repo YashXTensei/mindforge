@@ -86,6 +86,8 @@ class TriggerProcessingView(APIView):
             from .tasks import process_document
             try:
                 doc = Document.objects.get(id=source_id, user=request.user)
+                if doc.processing_status in ['pending', 'extracting', 'chunking', 'embedding']:
+                    return Response({'error': 'Processing is already in progress'}, status=status.HTTP_409_CONFLICT)
                 doc.update_status('pending')
                 process_document.delay(doc.id)
                 return Response({'message': f'Document "{doc.title}" queued for processing'})
@@ -97,6 +99,8 @@ class TriggerProcessingView(APIView):
             from .tasks import process_note
             try:
                 note = Note.objects.get(id=source_id, user=request.user)
+                if note.processing_status in ['pending', 'extracting', 'chunking', 'embedding']:
+                    return Response({'error': 'Processing is already in progress'}, status=status.HTTP_409_CONFLICT)
                 note.update_status('pending')
                 process_note.delay(note.id)
                 return Response({'message': f'Note "{note.title}" queued for processing'})
@@ -148,8 +152,10 @@ class ChatView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
         except Exception as e:
+            import logging
+            logging.getLogger(__name__).error(f"Chat error: {str(e)}")
             return Response(
-                {'error': str(e)},
+                {'error': 'An internal error occurred.'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
@@ -162,7 +168,28 @@ class ConversationListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        conversations = ChatConversation.objects.filter(user=request.user)
+        from django.db.models import Count
+        from .models import ChatMessage
+
+        # Fetch conversations with annotated count
+        conversations = list(ChatConversation.objects.filter(user=request.user).annotate(
+            annotated_message_count=Count('messages')
+        ))
+        
+        # Fetch the last message for each conversation using PostgreSQL's DISTINCT ON
+        if conversations:
+            conv_ids = [c.id for c in conversations]
+            last_messages = ChatMessage.objects.filter(
+                conversation_id__in=conv_ids
+            ).order_by('conversation_id', '-created_at').distinct('conversation_id')
+            
+            last_msg_map = {m.conversation_id: m for m in last_messages}
+            for c in conversations:
+                c._last_message_obj = last_msg_map.get(c.id)
+        else:
+            for c in conversations:
+                c._last_message_obj = None
+
         serializer = ChatConversationListSerializer(conversations, many=True)
         return Response(serializer.data)
 

@@ -78,7 +78,7 @@ def process_document(self, document_id):
                 logger.info(f"Using signed Cloudinary URL for doc {doc.id}")
 
             with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as temp_file:
-                response = requests.get(file_url)
+                response = requests.get(file_url, timeout=60)
                 response.raise_for_status()
                 temp_file.write(response.content)
                 temp_file_path = temp_file.name
@@ -88,6 +88,13 @@ def process_document(self, document_id):
             finally:
                 if os.path.exists(temp_file_path):
                     os.remove(temp_file_path)
+
+        # Delete old chunks first (in case of reprocessing)
+        content_type = ContentType.objects.get_for_model(Document)
+        Chunk.objects.filter(
+            content_type=content_type,
+            object_id=doc.id,
+        ).delete()
 
         if not pages:
             doc.mark_completed()
@@ -111,12 +118,6 @@ def process_document(self, document_id):
         embeddings = generate_embeddings(chunk_texts)
 
         # ── Step 4: Save Chunks to DB ──
-        # Delete old chunks first (in case of reprocessing)
-        content_type = ContentType.objects.get_for_model(Document)
-        Chunk.objects.filter(
-            content_type=content_type,
-            object_id=doc.id,
-        ).delete()
 
         # Bulk create new chunks
         chunk_objects = []
@@ -193,6 +194,13 @@ def process_note(self, note_id):
 
         pages = extract_text_from_note(note)
 
+        # ── Step 4: Save Chunks to DB (Delete Old) ──
+        content_type = ContentType.objects.get_for_model(Note)
+        Chunk.objects.filter(
+            content_type=content_type,
+            object_id=note.id,
+        ).delete()
+
         if not pages:
             note.mark_completed()
             logger.info(f"Note {note.id} is empty, marked completed")
@@ -214,12 +222,7 @@ def process_note(self, note_id):
         chunk_texts = [c['content'] for c in chunks]
         embeddings = generate_embeddings(chunk_texts)
 
-        # ── Step 4: Save Chunks to DB ──
-        content_type = ContentType.objects.get_for_model(Note)
-        Chunk.objects.filter(
-            content_type=content_type,
-            object_id=note.id,
-        ).delete()
+        # ── Step 4: Save Chunks to DB (Create New) ──
 
         chunk_objects = []
         for chunk_data, embedding in zip(chunks, embeddings):

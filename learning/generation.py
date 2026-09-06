@@ -35,15 +35,17 @@ def extract_topics_from_text(text: str) -> list[str]:
         max_topics = max(5, min(30, char_length // 3000))
         
         # We can pass the whole text because Gemini has a massive context window (1M+ tokens)
+        # We can pass the whole text because Gemini has a massive context window (1M+ tokens)
         prompt = f"""Analyze the following text and extract up to {max_topics} core learning topics or concepts.
-These topics will be used in a spaced repetition learning system.
+These topics will be used to generate spaced repetition flashcards.
 
 Rules:
 1. Keep topics concise (1-4 words max).
-2. Focus on foundational concepts, not trivial details.
-3. Make them specific enough to be testable (e.g., 'React useEffect' instead of just 'React').
-4. If the text is very long, extract the most relevant and important {max_topics} topics.
-5. Return ONLY a valid JSON list of strings, nothing else.
+2. Extract meaningful, learnable concepts rather than trivial entity names (e.g., 'React useEffect' or 'Isekai Anime Tropes').
+3. Make them specific enough to be testable.
+4. {max_topics} is a MAXIMUM limit, not a target. Only extract topics that are genuinely important or useful to learn from this text.
+5. Do not assume any material is 'invalid'; if the user uploaded it, find the core concepts within it.
+6. Return ONLY a valid JSON list of strings, nothing else.
 
 Text to analyze:
 {text}"""
@@ -115,7 +117,8 @@ Rules:
 1. The question MUST be answerable from the provided context.
 2. All 4 options must be plausible (no obviously wrong answers).
 3. The explanation should help the user learn, not just state the answer.
-4. Return ONLY valid JSON, nothing else."""
+4. DO NOT start questions with meta-phrases like "Based on the provided notes", "According to the context", or "In the text". Frame the question directly and naturally.
+5. Return ONLY valid JSON, nothing else."""
 
         response = model.generate_content(
             prompt,
@@ -145,6 +148,38 @@ Rules:
         return None
 
 
+def validate_question(q_data: dict) -> bool:
+    """
+    Validates a single question dict from Gemini output.
+    Returns True if the question has all required fields and valid values.
+    """
+    if not isinstance(q_data, dict):
+        return False
+    
+    required_keys = {'question', 'options', 'correct_answer', 'explanation'}
+    if not required_keys.issubset(q_data.keys()):
+        return False
+    
+    # correct_answer must be exactly one of A, B, C, D
+    if q_data['correct_answer'] not in ['A', 'B', 'C', 'D']:
+        return False
+    
+    # options must be a dict with A, B, C, D keys
+    options = q_data.get('options')
+    if not isinstance(options, dict):
+        return False
+    if not {'A', 'B', 'C', 'D'}.issubset(options.keys()):
+        return False
+    
+    # question and explanation must be non-empty strings
+    if not isinstance(q_data['question'], str) or not q_data['question'].strip():
+        return False
+    if not isinstance(q_data['explanation'], str):
+        return False
+    
+    return True
+
+
 def generate_review_questions_batch(topics_data: list[dict]) -> list[dict]:
     """
     Generates multiple MCQ questions in a SINGLE API call.
@@ -157,7 +192,7 @@ def generate_review_questions_batch(topics_data: list[dict]) -> list[dict]:
         ]
         
     Returns:
-        List of generated question dicts matching the input order.
+        List of validated question dicts matching the input order.
     """
     if not topics_data:
         return []
@@ -166,7 +201,13 @@ def generate_review_questions_batch(topics_data: list[dict]) -> list[dict]:
         model = genai.GenerativeModel(settings.RAG_CONFIG['QUESTION_MODEL'])
         
         # Build the batch prompt
-        prompt = "Generate EXACTLY ONE multiple-choice question for each of the following topics based on their provided context.\n\n"
+        prompt = "Generate EXACTLY ONE multiple-choice question for each of the following topics.\n\n"
+        prompt += "IMPORTANT SOURCE-FIRST STRATEGY:\n"
+        prompt += "- If the provided context contains relevant source material, primarily base your question on that material.\n"
+        prompt += "- If the source material is insufficient for a meaningful question, supplement it with relevant general knowledge.\n"
+        prompt += "- If no useful source context is provided, use general knowledge to create a meaningful question.\n"
+        prompt += "- NEVER invent facts about what the user's document contains.\n"
+        prompt += "- NEVER contradict the source material.\n\n"
         
         for i, data in enumerate(topics_data):
             diff_map = {1: "EASY", 2: "MEDIUM", 3: "HARD"}
@@ -204,10 +245,12 @@ The output MUST be a valid JSON array of objects with this exact schema:
 
 Rules:
 1. You MUST return an array of objects.
-2. Ensure options are A, B, C, D.
-3. Generate exactly one question per topic.
-4. DO NOT repeat any previously asked question. Ask about a DIFFERENT aspect of the topic.
-5. Tailor question complexity based on the user's stats — if accuracy is high, push harder within the given difficulty level.
+2. correct_answer MUST be exactly one character: "A", "B", "C", or "D".
+3. options MUST be a JSON object with keys "A", "B", "C", "D".
+4. Generate exactly one question per topic.
+5. DO NOT repeat any previously asked question. Ask about a DIFFERENT aspect of the topic.
+6. Tailor question complexity based on the user's stats — if accuracy is high, push harder within the given difficulty level.
+7. DO NOT start questions with meta-phrases like "Based on the provided notes", "According to the context", or "In the text". Frame the question directly and naturally.
 """
         response = model.generate_content(
             prompt,
@@ -224,9 +267,18 @@ Rules:
         if not isinstance(questions_array, list):
             logger.error("Batch generation did not return a list")
             return []
-            
-        return questions_array
+        
+        # Validate each item individually — skip invalid ones instead of crashing
+        validated = []
+        for q in questions_array:
+            if validate_question(q):
+                validated.append(q)
+            else:
+                logger.warning(f"Skipping invalid question from Gemini: {str(q)[:200]}")
+        
+        return validated
         
     except Exception as e:
         logger.error(f"Failed to batch generate questions: {str(e)}")
         return []
+

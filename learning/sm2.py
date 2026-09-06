@@ -43,8 +43,11 @@ def update_sm2(mastery: TopicMastery, quality: int) -> None:
         # User answered incorrectly
         mastery.consecutive_correct = 0
         mastery.review_interval_days = 1
-        # EF does not change on incorrect answers in this simplified implementation
-        # (Though original SM-2 does decrease it slightly)
+        # SM-2: EF decreases on poor quality to shorten intervals for weak topics
+        mastery.easiness_factor = max(
+            1.3,
+            mastery.easiness_factor + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02))
+        )
         
     # 4. Update confidence level
     # Confidence = accuracy × experience_factor

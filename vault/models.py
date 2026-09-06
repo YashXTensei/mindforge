@@ -64,6 +64,7 @@ class Document(ProcessingMixin, BaseKnowledge):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._original_file = self.file.name if self.pk else None
+        self._original_title = self.title if self.pk else None
 
     def save(self, *args, **kwargs):
         if self.pk and self.file.name != self._original_file:
@@ -72,6 +73,7 @@ class Document(ProcessingMixin, BaseKnowledge):
             self._file_changed = False
         super().save(*args, **kwargs)
         self._original_file = self.file.name
+        self._original_title = self.title
 
 class Resource(BaseKnowledge):
     """External bookmarks/references — articles, videos, repos, docs."""

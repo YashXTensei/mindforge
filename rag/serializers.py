@@ -59,10 +59,14 @@ class ChatConversationListSerializer(serializers.ModelSerializer):
         fields = ['id', 'title', 'message_count', 'last_message', 'created_at', 'updated_at']
 
     def get_message_count(self, obj):
-        return obj.messages.count()
+        return getattr(obj, 'annotated_message_count', obj.messages.count())
 
     def get_last_message(self, obj):
-        last = obj.messages.order_by('-created_at').first()
+        last = getattr(obj, '_last_message_obj', None)
+        # Fallback to query if not preloaded
+        if last is None and not hasattr(obj, '_last_message_obj'):
+            last = obj.messages.order_by('-created_at').first()
+            
         if last:
             return {'role': last.role, 'content': last.content[:100], 'created_at': last.created_at}
         return None

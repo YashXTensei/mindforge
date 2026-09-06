@@ -10,5 +10,7 @@
 
 4 : Agar pdf ka name change kar dete ha to AI ke source me vo purana name hi dikhata ha
 
-5 : deleted pdfs se bhi AI context le raha ha , sources me include kiya tha AI ne deleted PDF ko
+5 : Start review aaj ka ho chuka tha 10 questions usne show kiye , 6 baki the jab start review pe click karo to vo completed dikhata ha aur wahi pichla score dikha raha ha (Kabhi kabhi ye dikkat ati ha abhi 1 min baad to thik ho gaya ye aur bache hue 6 questions bhi aa gaye , ek baar isko review karna hoga)
+
+
 
