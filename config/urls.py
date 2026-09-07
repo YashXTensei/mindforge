@@ -23,6 +23,7 @@ urlpatterns = [
     path('api/search/', include('search.urls')),
     path('api/rag/', include('rag.urls')),
     path('api/learning/', include('learning.urls')),
+    path('api/graph/', include('graph.urls')),
 ]
 
 if settings.DEBUG:

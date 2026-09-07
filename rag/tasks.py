@@ -155,6 +155,25 @@ def process_document(self, document_id):
         else:
             logger.info(f"Document {doc.id}: Skipping topic extraction as requested")
 
+        # ── Step 6: Knowledge Compiler (Phase 5) ──
+        try:
+            from graph.services import compile_knowledge
+            from learning.models import TopicMastery
+
+            # Use existing topic IDs (from Step 5) + chunks (from Step 2)
+            user_topics = TopicMastery.objects.filter(user=doc.user).values('id', 'topic_name')
+            topics_with_ids = [{"id": t['id'], "name": t['topic_name']} for t in user_topics]
+
+            if topics_with_ids and chunk_texts:
+                compile_knowledge(doc.user, chunk_texts, topics_with_ids, doc)
+                logger.info(f"Document {doc.id}: Knowledge compilation complete")
+            else:
+                logger.info(f"Document {doc.id}: Skipping knowledge compilation (no topics or chunks)")
+
+        except Exception as compile_err:
+            # ⚡ ISOLATED FAILURE — doc processing still succeeds
+            logger.warning(f"Document {doc.id}: Knowledge compilation failed (non-fatal): {compile_err}")
+
         # ── Done! ──
         doc.mark_completed()
         logger.info(f"Document {doc.id} processed: {len(chunk_objects)} chunks saved")
@@ -258,6 +277,24 @@ def process_note(self, note_id):
                 logger.warning(f"Note {note.id}: Topic extraction failed (non-fatal): {topic_err}")
         else:
             logger.info(f"Note {note.id}: Skipping topic extraction as requested")
+
+        # ── Step 6: Knowledge Compiler (Phase 5) ──
+        try:
+            from graph.services import compile_knowledge
+            from learning.models import TopicMastery
+
+            user_topics = TopicMastery.objects.filter(user=note.user).values('id', 'topic_name')
+            topics_with_ids = [{"id": t['id'], "name": t['topic_name']} for t in user_topics]
+
+            if topics_with_ids and chunk_texts:
+                compile_knowledge(note.user, chunk_texts, topics_with_ids, note)
+                logger.info(f"Note {note.id}: Knowledge compilation complete")
+            else:
+                logger.info(f"Note {note.id}: Skipping knowledge compilation (no topics or chunks)")
+
+        except Exception as compile_err:
+            # ⚡ ISOLATED FAILURE — note processing still succeeds
+            logger.warning(f"Note {note.id}: Knowledge compilation failed (non-fatal): {compile_err}")
 
         # ── Done! ──
         note.mark_completed()
