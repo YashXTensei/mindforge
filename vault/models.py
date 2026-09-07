@@ -3,6 +3,7 @@ from django.conf import settings
 from taxonomy.models import Category, Tag
 from django.core.validators import FileExtensionValidator
 from django.contrib.contenttypes.fields import GenericRelation
+from rag.mixins import ProcessingMixin
 import os
 import uuid
 
@@ -46,7 +47,6 @@ def document_upload_path(instance, filename):
     ext = filename.split('.')[-1]
     filename = f"{uuid.uuid4()}.{ext}"
     return os.path.join(f"vault/{instance.user.id}/documents", filename)
-from rag.mixins import ProcessingMixin
 
 class Document(ProcessingMixin, BaseKnowledge):
     original_filename = models.CharField(max_length=255)

@@ -1,6 +1,6 @@
 # MindForge — Architecture
 
-> Last Updated: 25 August 2026
+> Last Updated: 7 September 2026
 
 ## System Overview
 
@@ -48,7 +48,7 @@ User
  │
  ├── TopicMastery (topic_name, confidence, next_review) [Learning]
  │    ├── TopicSource (Generic FK to Document/Note)
- │    └── ReviewItem (FK to TopicMastery)
+ │    └── ReviewItem (FK to TopicMastery, SET_NULL)
  │
  ├── ReviewSession (score, total_items, completed_at)   [Learning]
  │    └── ReviewItem (question, options, user_answer)
@@ -106,11 +106,14 @@ User
      └── GET /analyze-gap/
 ```
 
+*Note: `/learning/` endpoints now use RAG semantic search for question context.*
+
 ## AI Provider Strategy
 
 | Provider | Use Case | Implementation |
 |---|---|---|
-| **Google Gemini Flash 3.6** | Chat, Quiz Generation, Topic Extraction | Active |
-| **Google Gemini Flash 3.5 Vision** | Image OCR / Inline Vision | Active |
+| **Google Gemini Flash 3.6** | Chat | Active |
+| **Google Gemini Flash 3.5** | Quiz Generation, Topic Extraction | Active |
+| **Google Gemini Flash 3.5 Lite** | Image OCR / Inline Vision | Active |
 | **Cohere Embed v3** | Vector embeddings (RAG) | Active |
 | **Ollama (local)** | Dev/Fallback | Planned |

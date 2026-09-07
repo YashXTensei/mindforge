@@ -1,6 +1,6 @@
 # MindForge — Architectural Decisions
 
-> Last Updated: 23 June 2026
+> Last Updated: 7 September 2026
 
 ---
 
@@ -134,6 +134,30 @@ MindForge is an AI learning companion that remembers what you're forgetting.
 
 ---
 
+## 2026-09-07 — Phase 4 Hardening Pass
+
+### Source-First Context Retrieval
+**Decision:** Use `rag.search.semantic_search` to fetch relevant chunks for question generation instead of accessing `text_content`/`content` attributes on source objects.
+**Reason:** `Document` model has no text fields — extracted text lives in `rag.Chunk`. Semantic search finds the most relevant chunks for each topic, providing better context than arbitrary text slices.
+
+### ReviewItem Cascade Strategy
+**Decision:** Changed `ReviewItem.mastery` from `CASCADE` to `SET_NULL`.
+**Reason:** When users delete a document, the orphaned `TopicMastery` gets cleaned up (via signal). With CASCADE, all historical `ReviewItem` records were destroyed, corrupting `ReviewSession` data. SET_NULL preserves quiz history.
+
+### SM-2 Quality Mapping
+**Decision:** Map correct=5, incorrect=1, skip=0 (previously correct=4).
+**Reason:** With quality=4, the SM-2 EF formula yields delta=0.0 (no change). Quality=5 gives +0.1 (EF increases for strong topics), quality=1 gives -0.54 (EF decreases for weak topics). This makes spaced repetition actually adapt.
+
+### Extract Topics Toggle
+**Decision:** Added `extract_topics` boolean field to `Document` and `Note` models (default=True).
+**Reason:** Users upload personal/reference material (e.g., anime lists, personal docs) that shouldn't generate quiz topics. This gives users control without affecting RAG/search/chunking.
+
+### Question Generation Guardrails
+**Decision:** Added `validate_question()` helper and strict schema enforcement in batch generation.
+**Reason:** Gemini occasionally returns malformed output (e.g., `correct_answer: "Option A"` instead of `"A"`). Without validation, `CharField(max_length=1)` throws `DataError` and crashes the entire daily review API.
+
+---
+
 ## Timeline
 
 | Date | Event |
@@ -143,3 +167,4 @@ MindForge is an AI learning companion that remembers what you're forgetting.
 | 30 June 2026 | Official Phase 1 development begins |
 | 14 Aug 2026 | MIP Deployed to production (mindtensei.me) |
 | 25 Aug 2026 | Phase 4 Complete (Learning Engine deployed) |
+| 7 Sep 2026 | Phase 4 Hardening Complete (15 fixes) |

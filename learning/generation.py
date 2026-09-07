@@ -35,7 +35,6 @@ def extract_topics_from_text(text: str) -> list[str]:
         max_topics = max(5, min(30, char_length // 3000))
         
         # We can pass the whole text because Gemini has a massive context window (1M+ tokens)
-        # We can pass the whole text because Gemini has a massive context window (1M+ tokens)
         prompt = f"""Analyze the following text and extract up to {max_topics} core learning topics or concepts.
 These topics will be used to generate spaced repetition flashcards.
 

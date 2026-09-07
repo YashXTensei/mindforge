@@ -37,6 +37,7 @@ This document tracks everything built in MindForge, what remains to be built, an
 - **Daily Review Session:** Interactive MCQ quiz UI that tests users on due topics. AI generates questions and "Why am I reviewing this?" context on the fly.
 - **Mobile Responsiveness:** Added hamburger menu, mobile-friendly navigation, and auto-hiding chat sidebar.
 - **Error Handling:** Graceful API and UI handling for rate limits, registration/login failures, and quiz generation errors.
+- **Phase 4 Hardening:** 15 major fixes implemented, including RAG-based context retrieval for questions, fully functional SM-2 scoring, robust Gemini output validation, preserved review history on document deletion, and significant performance optimizations.
 
 ---
 
@@ -60,6 +61,19 @@ This document tracks everything built in MindForge, what remains to be built, an
 ---
 
 ## 📅 Chronological Changelog
+
+### September 6-7, 2026 (Phase 4 Hardening — 15 Bug Fixes & Improvements)
+- **CRITICAL: Fixed Document Context Retrieval:** `DailyReviewView` now uses `rag.search.semantic_search` to fetch relevant chunks for question generation. Previously, all PDF topics fell back to generic knowledge because `Document` has no `text_content` field.
+- **SM-2 Algorithm Fixed:** Changed quality scoring from 4→5 (correct) so Easiness Factor actually changes (+0.1 per correct). Also applied EF formula on incorrect answers (was skipped before). SM-2 spaced repetition now works as intended.
+- **Gemini Output Validation:** Added `validate_question()` helper to gracefully skip malformed AI output instead of crashing with `DataError` on `CharField(max_length=1)`.
+- **Review History Preserved:** Changed `ReviewItem.mastery` from `CASCADE` to `SET_NULL`. Deleting documents no longer wipes historical quiz data.
+- **Session Score Calculated:** `ReviewSession.score` is now computed on completion (was always `None`).
+- **Security:** ChatView no longer leaks raw exception details to frontend.
+- **Performance:** Fixed N+1 queries in semantic search (`select_related`), ConversationListView (annotated queries + DISTINCT ON).
+- **Pipeline Hardening:** Concurrency guard on processing trigger, orphan chunk cleanup, `updated_at` fix in ProcessingMixin, redundant title update prevention, `requests.get` timeout.
+- **Prompt Quality:** Source-first strategy in question generation, no meta-phrases ("Based on the provided notes..."), improved topic extraction for unconventional material.
+- **New Field:** `extract_topics` boolean on Document and Note — users can opt out of AI topic extraction for personal/reference material.
+- **Tests:** Added boundary tests in `learning/tests.py` (validation, deletion integrity, source-first prompts).
 
 ### August 31 - September 1, 2026 (Deployment, Math OCR, Multi-Model Routing & Polish)
 - **Deployment & Cloudinary:** Configured production environment with Heroku, PostgreSQL, Redis (Celery), and Cloudinary `RawMediaCloudinaryStorage`.
