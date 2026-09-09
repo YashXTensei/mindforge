@@ -10,6 +10,12 @@
 
 5. Re-upload topic refresh (currently blocks new topic extraction if topics already exist)
 
+6. duplicate documents not allowed 
+
 # bugs to be fixed :
 
 1. Start review aaj ka ho chuka tha 10 questions usne show kiye , 6 baki the jab start review pe click karo to vo completed dikhata ha aur wahi pichla score dikha raha ha (Kabhi kabhi ye dikkat ati ha abhi 1 min baad to thik ho gaya ye aur bache hue 6 questions bhi aa gaye , ek baar isko review karna hoga - needs investigation)
+
+2. AI chat pe jab chats load hoti ha to no chats dikhata ha rather than fetching/loading chats 
+
+3. Notes me agar ham new category add karte ha to vo ho nahi rahi agar existing ha , failed ata ha bas , clear msg ana chahiye jisse pta chal jaye user ko
