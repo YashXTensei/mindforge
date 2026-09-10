@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'search',
     'rag',
     'learning',
+    'graph',
 ]
 
 MIDDLEWARE = [
