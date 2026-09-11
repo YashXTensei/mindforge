@@ -41,13 +41,15 @@ MindForge is an AI-powered personal knowledge base and operating system. It goes
 
 ## ✨ Key Features
 
-- **Document Vault (RAG Pipeline):** Upload PDFs and images. MindForge automatically extracts text, chunks it intelligently, and generates high-dimensional vector embeddings using Cohere.
-- **Semantic Search:** Don't just search for exact keywords. Find notes and documents by their *meaning* using PostgreSQL's `pgvector` HNSW index.
-- **Smart Notes:** Write, format, and organize your thoughts with Markdown support.
-- **AI Chat (Gemini 3.6 Flash):** Chat directly with your vault. The AI retrieves relevant context from your documents and cites its sources when answering.
-- **Background Processing:** Heavy tasks (like embedding generation and text extraction) are offloaded to Celery & Redis workers to keep the UI buttery smooth.
+- **📄 Document Vault (RAG Pipeline):** Upload PDFs and images. MindForge automatically extracts text, chunks it intelligently, and generates high-dimensional vector embeddings using Cohere.
+- **🔎 Semantic Search:** Don't just search for exact keywords. Find notes and documents by their *meaning* using PostgreSQL's `pgvector` HNSW index.
+- **📝 Smart Notes:** Write, format, and organize your thoughts with Markdown support.
+- **💬 AI Chat (Gemini 3.6 Flash):** Chat directly with your vault. The AI retrieves relevant context from your documents and cites its sources when answering.
+- **🧠 SM-2 Spaced Repetition Engine:** AI auto-extracts topics from your uploads, generates daily quizzes, and uses the SM-2 algorithm to space reviews for optimal long-term retention.
+- **🕸️ Knowledge Graph & Compiler:** AI analyzes your documents to discover prerequisite and related connections between topics, extracts factual claims with evidence quotes, and visualizes everything as an interactive force-directed graph.
+- **📊 Gap Analysis:** Click any topic in the graph to see its prerequisites. BFS algorithm identifies missing and weak foundational topics, giving you a personalized learning path.
+- **⚡ Background Processing:** Heavy tasks (like embedding generation, text extraction, and knowledge compilation) are offloaded to Celery & Redis workers to keep the UI buttery smooth.
 - **🔐 JWT Authentication & User Isolation:** Secure, token-based authentication ensuring your knowledge base is completely private.
-- **🔎 Global Search:** Instantly search across all your notes, documents, and resources in one place.
 - **🏷️ Categories & Tags:** Organize your notes effectively with customizable categories and tagging system.
 
 ---
@@ -87,7 +89,7 @@ MindForge is an AI-powered personal knowledge base and operating system. It goes
 - **Framework:** Django + Django REST Framework
 - **Database:** PostgreSQL (with `pgvector` extension for semantic search)
 - **Task Queue:** Celery + Redis
-- **AI/LLMs:** Cohere (Embeddings) + Google Gemini (Chat Generation)
+- **AI/LLMs:** Cohere (Embeddings) + Google Gemini (Chat, Topic Extraction, Knowledge Compiler)
 - **Storage:** Cloudinary (for PDFs and Images)
 - **Deployment:** Heroku (Web + Worker Eco Dynos)
 
@@ -102,6 +104,9 @@ mindforge/
 ├── vault/         # Document upload, storage, and resource links
 ├── rag/           # RAG pipeline, chunking, embeddings, and chat
 ├── search/        # Global search and semantic search APIs
+├── learning/      # SM-2 spaced repetition, topic mastery, daily review
+├── graph/         # Knowledge Graph, compiler, gap analysis
+├── taxonomy/      # Categories and tags
 ├── config/        # Main Django configuration and routing
 ├── frontend/      # React Vite application
 │   └── src/
@@ -187,5 +192,5 @@ Built with curiosity, caffeine, and an unreasonable number of commits by **Yash 
 ---
 
 <div align="center">
-  <i><b>MindForge 1.0.0 — The first public release</b></i>
+  <i><b>MindForge 3.0.0 — Knowledge Graph & Intelligent Learning</b></i>
 </div>
