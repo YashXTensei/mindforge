@@ -12,6 +12,12 @@
 
 6. duplicate documents not allowed 
 
+7. CI pipeline
+
+8. import re mid file
+
+9. test coverage
+
 # bugs to be fixed :
 
 1. Start review aaj ka ho chuka tha 10 questions usne show kiye , 6 baki the jab start review pe click karo to vo completed dikhata ha aur wahi pichla score dikha raha ha (Kabhi kabhi ye dikkat ati ha abhi 1 min baad to thik ho gaya ye aur bache hue 6 questions bhi aa gaye , ek baar isko review karna hoga - needs investigation)
