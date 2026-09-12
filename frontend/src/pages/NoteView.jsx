@@ -32,7 +32,9 @@ export default function NoteView() {
         queryFn: () => fetchNote(id),
         refetchInterval: (query) => {
             const data = query.state?.data;
-            if (data && ['pending', 'extracting', 'chunking', 'embedding'].includes(data.processing_status)) {
+            if (!data) return false;
+            // Poll while processing is in progress
+            if (['pending', 'extracting', 'chunking', 'embedding'].includes(data.processing_status)) {
                 return 3000;
             }
             return false;
@@ -58,9 +60,13 @@ export default function NoteView() {
     const updateMutation = useMutation({
         mutationFn: updateNote,
         onSuccess: () => {
-            queryClient.invalidateQueries(['note', id]);
-            queryClient.invalidateQueries(['notes']);
-            setIsEditing(false); // Wapas Read Mode me jao
+            toast.success('Note saved!');
+            setIsEditing(false);
+            // Small delay to let signal update processing_status before refetch
+            setTimeout(() => {
+                queryClient.invalidateQueries({ queryKey: ['note', id] });
+                queryClient.invalidateQueries({ queryKey: ['notes'] });
+            }, 500);
         }
     });
 

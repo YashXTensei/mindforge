@@ -29,3 +29,9 @@
 ~~4. Notes me bhi vo topic extraction checkbox dena chahiye hame~~ (DONE - Added Process AI and Extract Topics options with auto-trigger)
 
 ~~5. Abhi checkbox for AI read ha par uska koi fayda nahi ha Note fir bhi AI ko jata hi ha agar uncheck karo to , aur extraction wala checkbox agar edit karne ke baad check kare to uska koi use nahi hota~~ (DONE - Fixed signal ordering + extract_topics re-trigger)
+
+~~6. AI Note ko padh nahi pa raha — double processing bug (signal ke andar update_status recursive post_save fire karta tha)~~ (DONE - Added _signal_processing flag to prevent recursive loops)
+
+~~7. Processing loader bina refresh ke green nahi hota~~ (DONE - Fixed polling + delayed query invalidation after save)
+
+~~8. Upload time me -1 minutes show kar raha tha~~ (DONE - Math.max(0, diff) + "Just now" for < 1 min)

@@ -45,12 +45,18 @@ from notes.models import Note
 def trigger_note_processing(sender, instance, created, **kwargs):
     """
     Auto-trigger note processing when:
-    1. Note is newly created (created=True)
+    1. Note is newly created with content and process_with_ai is not skipped
     2. Note content changed on an already-processed note (re-process)
-    3. Note was manually set to 'pending' status (user opted-in via edit)
+    3. Status was set to 'pending' by serializer (extract_topics toggled)
     
-    Notes with processing_status='unprocessed' are auto-queued if content exists.
+    Uses _signal_processing flag to prevent recursive loops since
+    update_status() triggers another post_save.
     """
+    # Prevent recursive signal calls
+    if getattr(instance, '_signal_processing', False):
+        return
+    
+    # User opted out of AI processing
     if getattr(instance, '_skip_auto_process', False):
         return
 
@@ -58,21 +64,14 @@ def trigger_note_processing(sender, instance, created, **kwargs):
         # New note with content — queue for processing
         def queue_task():
             from .tasks import process_note
+            instance._signal_processing = True
             instance.update_status('pending')
+            instance._signal_processing = False
             process_note.delay(instance.id)
         transaction.on_commit(queue_task)
     elif not created:
-        content_changed = getattr(instance, '_content_changed', False)
-        
-        if content_changed and instance.processing_status == 'completed':
-            # Content changed on processed note — re-process
-            def queue_task():
-                from .tasks import process_note
-                instance.update_status('pending')
-                process_note.delay(instance.id)
-            transaction.on_commit(queue_task)
-        elif instance.processing_status == 'pending':
-            # Manually set to pending (from API trigger) — process
+        if instance.processing_status == 'pending':
+            # Serializer set it to pending (e.g., extract_topics toggled) — just queue
             def queue_task():
                 from .tasks import process_note
                 process_note.delay(instance.id)
