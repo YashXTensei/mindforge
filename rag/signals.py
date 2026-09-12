@@ -19,6 +19,9 @@ def trigger_document_processing(sender, instance, created, **kwargs):
     Uses transaction.on_commit to ensure the DB row is committed
     before Celery picks up the task (prevents race condition).
     """
+    if getattr(instance, '_skip_auto_process', False):
+        return
+
     if created or getattr(instance, '_file_changed', False):
         def queue_task():
             from .tasks import process_document
@@ -48,6 +51,9 @@ def trigger_note_processing(sender, instance, created, **kwargs):
     
     Notes with processing_status='unprocessed' are auto-queued if content exists.
     """
+    if getattr(instance, '_skip_auto_process', False):
+        return
+
     if created and instance.content.strip():
         # New note with content — queue for processing
         def queue_task():

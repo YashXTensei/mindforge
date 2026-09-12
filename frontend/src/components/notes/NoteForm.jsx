@@ -25,6 +25,7 @@ export function NoteForm({
     const [formCategory, setFormCategory] = useState(initialData?.category || '');
     const [formTags, setFormTags] = useState(initialData?.tags_detail?.map(t => t.id) || []);
     const [extractTopics, setExtractTopics] = useState(initialData?.extract_topics ?? false);
+    const [processWithAI, setProcessWithAI] = useState(isEditing ? (initialData?.processing_status !== 'unprocessed') : true);
 
     // When a new category is created, automatically select it
     useEffect(() => {
@@ -52,7 +53,8 @@ export function NoteForm({
             content,
             category: formCategory || null,
             tags: formTags,
-            extract_topics: extractTopics
+            extract_topics: extractTopics,
+            process_with_ai: processWithAI
         });
     };
 
@@ -108,9 +110,9 @@ export function NoteForm({
                     <input 
                         type="checkbox" 
                         id="processWithAI" 
-                        checked={isEditing && initialData?.processing_status === 'completed' ? true : extractTopics || true}
+                        checked={processWithAI}
                         disabled={isEditing && initialData?.processing_status === 'completed'}
-                        onChange={() => {}}
+                        onChange={(e) => setProcessWithAI(e.target.checked)}
                         className="h-4 w-4 rounded border-gray-700 bg-gray-900 text-purple-600 focus:ring-purple-500 focus:ring-offset-gray-900 disabled:opacity-50"
                     />
                     <label htmlFor="processWithAI" className={`text-sm ${isEditing && initialData?.processing_status === 'completed' ? 'text-emerald-400' : 'text-gray-300'}`}>

@@ -9,12 +9,14 @@ class DocumentSerializer(serializers.ModelSerializer): # Name changed
     category_detail = CategorySerializer(source='category', read_only=True)
     tags_detail = TagSerializer(source='tags', many=True, read_only=True)
 
+    process_with_ai = serializers.BooleanField(write_only=True, default=True)
+
     class Meta:
         model = Document # Model changed
         fields = [
             'id', 'title', 'file', 'description', 'category', 'category_detail',
             'tags', 'tags_detail', 'file_size', 'page_count', 'is_favorite', 'extract_topics',
-            'processing_status', 'processed_at',
+            'processing_status', 'processed_at', 'process_with_ai',
             'created_at', 'updated_at'
         ]
         read_only_fields = ['file_size', 'page_count', 'processing_status', 'processed_at']
@@ -39,6 +41,8 @@ class DocumentSerializer(serializers.ModelSerializer): # Name changed
         Auto-populate original_filename and file_size from the uploaded file.
         Also check for duplicate uploads (same filename + same size = likely same file).
         """
+        process_with_ai = validated_data.pop('process_with_ai', True)
+        
         uploaded_file = validated_data['file']
         validated_data['original_filename'] = uploaded_file.name
         validated_data['file_size'] = uploaded_file.size
@@ -54,7 +58,17 @@ class DocumentSerializer(serializers.ModelSerializer): # Name changed
                 {'file': [f'You already have a document named "{uploaded_file.name}" with the same file size. Please delete the existing one first or rename your file.']}
             )
         
-        return super().create(validated_data)
+        doc = super().create(validated_data)
+        if not process_with_ai:
+            doc._skip_auto_process = True
+        return doc
+
+    def update(self, instance, validated_data):
+        process_with_ai = validated_data.pop('process_with_ai', True)
+        doc = super().update(instance, validated_data)
+        if not process_with_ai:
+            doc._skip_auto_process = True
+        return doc
 
     def to_representation(self, instance):
         ret = super().to_representation(instance)

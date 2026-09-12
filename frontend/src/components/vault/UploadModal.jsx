@@ -27,6 +27,7 @@ export function UploadModal({
   // Document specific
   const [selectedFile, setSelectedFile] = useState(null);
   const [extractTopics, setExtractTopics] = useState(false);
+  const [processWithAI, setProcessWithAI] = useState(true);
   
   // Resource specific
   const [url, setUrl] = useState('');
@@ -47,6 +48,7 @@ export function UploadModal({
         if (activeTab === 'documents') {
           setSelectedFile(null); // Force re-upload if they want to change file
           setExtractTopics(editingItem.extract_topics ?? false);
+          setProcessWithAI(editingItem.processing_status !== 'unprocessed');
         } else {
           setUrl(editingItem.url || '');
           setResourceType(editingItem.resource_type || 'other');
@@ -59,6 +61,7 @@ export function UploadModal({
         setSelectedTags([]);
         setSelectedFile(null);
         setExtractTopics(false);
+        setProcessWithAI(true);
         setUrl('');
         setResourceType('other');
       }
@@ -74,6 +77,7 @@ export function UploadModal({
       if (description) formData.append('description', description);
       if (category) formData.append('category', category);
       formData.append('extract_topics', extractTopics);
+      formData.append('process_with_ai', processWithAI);
       selectedTags.forEach(tagId => formData.append('tags', tagId));
       onSubmitDocument(formData); 
     } else {
@@ -170,9 +174,9 @@ export function UploadModal({
                 <input 
                   type="checkbox" 
                   id="processWithAIVault" 
-                  checked={editingItem?.processing_status === 'completed' ? true : true}
+                  checked={processWithAI}
                   disabled={editingItem?.processing_status === 'completed'}
-                  onChange={() => {}}
+                  onChange={(e) => setProcessWithAI(e.target.checked)}
                   className="h-4 w-4 rounded border-gray-700 bg-gray-900 text-purple-600 focus:ring-purple-500 focus:ring-offset-gray-900 disabled:opacity-50"
                 />
                 <label htmlFor="processWithAIVault" className={`text-sm ${editingItem?.processing_status === 'completed' ? 'text-emerald-400' : 'text-gray-300'}`}>
