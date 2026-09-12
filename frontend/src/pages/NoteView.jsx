@@ -24,6 +24,7 @@ export default function NoteView() {
     const [categoryId, setCategoryId] = useState('');
     const [selectedTags, setSelectedTags] = useState([]);
     const [extractTopics, setExtractTopics] = useState(false);
+    const [processWithAI, setProcessWithAI] = useState(false);
 
     // Fetch Note Data
     const { data: note, isLoading, isError } = useQuery({
@@ -50,6 +51,7 @@ export default function NoteView() {
             setCategoryId(note.category?.id || '');
             setSelectedTags(note.tags_detail?.map(t => t.id) || []);
             setExtractTopics(note.extract_topics ?? false);
+            setProcessWithAI(note.processing_status !== 'unprocessed');
         }
     }, [note, isEditing]);
 
@@ -68,7 +70,7 @@ export default function NoteView() {
     const handleSave = () => {
         updateMutation.mutate({
             id,
-            noteData: { title, content, category: categoryId || null, tags: selectedTags, extract_topics: extractTopics }
+            noteData: { title, content, category: categoryId || null, tags: selectedTags, extract_topics: extractTopics, process_with_ai: processWithAI }
         });
     };
 
@@ -193,9 +195,9 @@ export default function NoteView() {
                             <input 
                                 type="checkbox" 
                                 id="processWithAI" 
-                                checked={note?.processing_status === 'completed' ? true : true}
+                                checked={processWithAI}
                                 disabled={note?.processing_status === 'completed'}
-                                onChange={() => {}}
+                                onChange={(e) => setProcessWithAI(e.target.checked)}
                                 className="h-4 w-4 rounded border-gray-700 bg-gray-900 text-purple-600 focus:ring-purple-500 focus:ring-offset-gray-900 disabled:opacity-50"
                             />
                             <label htmlFor="processWithAI" className={`text-sm ${note?.processing_status === 'completed' ? 'text-emerald-400' : 'text-gray-300'}`}>

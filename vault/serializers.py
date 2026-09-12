@@ -58,16 +58,29 @@ class DocumentSerializer(serializers.ModelSerializer): # Name changed
                 {'file': [f'You already have a document named "{uploaded_file.name}" with the same file size. Please delete the existing one first or rename your file.']}
             )
         
-        doc = super().create(validated_data)
+        # Extract tags before creating (M2M needs save first)
+        tags = validated_data.pop('tags', [])
+        doc = Document(**validated_data)
         if not process_with_ai:
             doc._skip_auto_process = True
+        doc.save()
+        if tags:
+            doc.tags.set(tags)
         return doc
 
     def update(self, instance, validated_data):
         process_with_ai = validated_data.pop('process_with_ai', True)
-        doc = super().update(instance, validated_data)
+        old_extract_topics = instance.extract_topics
+        
         if not process_with_ai:
-            doc._skip_auto_process = True
+            instance._skip_auto_process = True
+        
+        doc = super().update(instance, validated_data)
+        
+        # If user just checked extract_topics on a completed doc, re-trigger processing
+        if doc.extract_topics and not old_extract_topics and doc.processing_status == 'completed':
+            doc.update_status('pending')
+        
         return doc
 
     def to_representation(self, instance):

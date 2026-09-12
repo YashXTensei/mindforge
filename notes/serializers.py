@@ -21,14 +21,27 @@ class NoteSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         process_with_ai = validated_data.pop('process_with_ai', True)
-        note = super().create(validated_data)
+        note = Note(**{k: v for k, v in validated_data.items() if k != 'tags'})
         if not process_with_ai:
             note._skip_auto_process = True
+        note.save()
+        # Set tags (M2M) after save
+        if 'tags' in validated_data:
+            note.tags.set(validated_data['tags'])
         return note
 
     def update(self, instance, validated_data):
         process_with_ai = validated_data.pop('process_with_ai', True)
-        note = super().update(instance, validated_data)
+        # Track if extract_topics was just turned on
+        old_extract_topics = instance.extract_topics
+        
         if not process_with_ai:
-            note._skip_auto_process = True
+            instance._skip_auto_process = True
+        
+        note = super().update(instance, validated_data)
+        
+        # If user just checked extract_topics on a completed note, re-trigger processing
+        if note.extract_topics and not old_extract_topics and note.processing_status == 'completed':
+            note.update_status('pending')
+        
         return note
