@@ -29,7 +29,7 @@ export default function Chat() {
     };
 
     // Fetch conversation list
-    const { data: conversations = [] } = useQuery({
+    const { data: conversations = [], isLoading: isLoadingConversations } = useQuery({
         queryKey: ['conversations'],
         queryFn: fetchConversations,
     });
@@ -177,7 +177,13 @@ export default function Chat() {
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-2 custom-scrollbar">
-                    {conversations.length === 0 ? (
+                    {isLoadingConversations ? (
+                        <div className="space-y-2 p-2">
+                            {[1, 2, 3].map(i => (
+                                <div key={i} className="h-10 bg-gray-800/50 rounded-lg animate-pulse" />
+                            ))}
+                        </div>
+                    ) : conversations.length === 0 ? (
                         <div className="text-center text-gray-600 text-sm py-8 px-4">
                             No conversations yet. Start chatting!
                         </div>

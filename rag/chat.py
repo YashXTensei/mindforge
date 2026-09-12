@@ -6,6 +6,8 @@ Flow:
 """
 
 import logging
+import re
+import traceback
 import google.generativeai as genai
 from django.conf import settings
 from .search import get_context_for_chat
@@ -40,8 +42,6 @@ RULES:
 4. Format your answers in Markdown for readability.
 """
 
-
-import re
 
 # Context-dependent keywords indicating the user is referring to previous chat history
 CONTEXT_DEPENDENT_WORDS = {

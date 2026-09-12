@@ -197,7 +197,7 @@ export default function Notes() {
                         onCreateCategory={(name) => {
                             toast.promise(
                                 createCategoryMutation.mutateAsync({ name }),
-                                { loading: 'Adding...', success: 'Category added!', error: 'Failed to add.' }
+                                { loading: 'Adding...', success: 'Category added!', error: (err) => err?.response?.data?.name?.[0] || 'Failed to add category.' }
                             );
                         }}
                         onDeleteCategory={(id) => {
@@ -210,7 +210,7 @@ export default function Notes() {
                         onCreateTag={(name) => {
                             toast.promise(
                                 createTagMutation.mutateAsync({ name }),
-                                { loading: 'Adding...', success: 'Tag added!', error: 'Failed to add.' }
+                                { loading: 'Adding...', success: 'Tag added!', error: (err) => err?.response?.data?.name?.[0] || 'Failed to add tag.' }
                             );
                         }}
                         onDeleteTag={(id) => {

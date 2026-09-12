@@ -311,7 +311,11 @@ export default function Vault() {
                     } else {
                         toast.promise(
                             uploadMutation.mutateAsync(formData),
-                            { loading: 'Uploading document...', success: 'Document uploaded successfully!', error: 'Failed to upload document.' }
+                            { 
+                                loading: 'Uploading document...', 
+                                success: 'Document uploaded successfully!', 
+                                error: (err) => err?.response?.data?.file?.[0] || 'Failed to upload document.' 
+                            }
                         );
                     }
                 }}

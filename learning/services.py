@@ -48,16 +48,19 @@ def save_topics_for_content(user, content_object, topics: list[str]) -> list[Top
     # Get the ContentType for the source object (Document or Note)
     content_type = ContentType.objects.get_for_model(content_object)
     
-    # ── FIX 1: Re-upload protection ──
-    # If this document/note already has topics extracted, skip to avoid duplicates
+    # ── Re-upload handling ──
+    # If this document/note already has topic sources, clean them up
+    # so new topics can be extracted fresh. TopicMastery records are 
+    # preserved — only the TopicSource links are removed and re-created.
     existing_sources = TopicSource.objects.filter(
         content_type=content_type,
         object_id=content_object.id,
-    ).count()
+    )
     
-    if existing_sources > 0:
-        logger.info(f"Topics already extracted for {content_type.model} {content_object.id}, skipping")
-        return []
+    if existing_sources.exists():
+        count = existing_sources.count()
+        existing_sources.delete()
+        logger.info(f"Cleared {count} old topic sources for {content_type.model} {content_object.id}, re-extracting")
     
     saved_masteries = []
     

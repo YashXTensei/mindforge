@@ -24,6 +24,7 @@ export function NoteForm({
     const [content, setContent] = useState(initialData?.content || '');
     const [formCategory, setFormCategory] = useState(initialData?.category || '');
     const [formTags, setFormTags] = useState(initialData?.tags_detail?.map(t => t.id) || []);
+    const [extractTopics, setExtractTopics] = useState(initialData?.extract_topics ?? true);
 
     // When a new category is created, automatically select it
     useEffect(() => {
@@ -50,7 +51,8 @@ export function NoteForm({
             title,
             content,
             category: formCategory || null,
-            tags: formTags
+            tags: formTags,
+            extract_topics: extractTopics
         });
     };
 
@@ -96,6 +98,20 @@ export function NoteForm({
                 onDeleteTag={onDeleteTag}
                 isCreating={isCreatingTag}
             />
+
+            {/* ===== Extract Topics Toggle ===== */}
+            <div className="flex items-center gap-2">
+                <input 
+                    type="checkbox" 
+                    id="extractTopicsNote" 
+                    checked={extractTopics}
+                    onChange={(e) => setExtractTopics(e.target.checked)}
+                    className="h-4 w-4 rounded border-gray-700 bg-gray-900 text-purple-600 focus:ring-purple-500 focus:ring-offset-gray-900"
+                />
+                <label htmlFor="extractTopicsNote" className="text-sm text-gray-300">
+                    Extract topics for Spaced Repetition (Study Material)
+                </label>
+            </div>
 
             <div className="flex gap-3 mt-2">
                 <button 

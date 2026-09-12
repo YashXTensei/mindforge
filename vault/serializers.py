@@ -37,11 +37,23 @@ class DocumentSerializer(serializers.ModelSerializer): # Name changed
     def create(self, validated_data):
         """
         Auto-populate original_filename and file_size from the uploaded file.
-        User ko manually nahi bhejne padenge yeh fields.
+        Also check for duplicate uploads (same filename + same size = likely same file).
         """
         uploaded_file = validated_data['file']
         validated_data['original_filename'] = uploaded_file.name
         validated_data['file_size'] = uploaded_file.size
+        
+        # Duplicate detection: same user + same filename + same file size
+        user = validated_data.get('user') or self.context['request'].user
+        if Document.objects.filter(
+            user=user,
+            original_filename=uploaded_file.name,
+            file_size=uploaded_file.size,
+        ).exists():
+            raise serializers.ValidationError(
+                {'file': [f'You already have a document named "{uploaded_file.name}" with the same file size. Please delete the existing one first or rename your file.']}
+            )
+        
         return super().create(validated_data)
 
     def to_representation(self, instance):

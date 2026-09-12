@@ -25,3 +25,5 @@
 2. AI chat pe jab chats load hoti ha to no chats dikhata ha rather than fetching/loading chats 
 
 3. Notes me agar ham new category add karte ha to vo ho nahi rahi agar existing ha , failed ata ha bas , clear msg ana chahiye jisse pta chal jaye user ko
+
+4. Notes me bhi vo topic extraction checkbox dena chahiye hame 
