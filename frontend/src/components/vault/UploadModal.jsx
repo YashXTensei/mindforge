@@ -162,17 +162,42 @@ export function UploadModal({
                 className="text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-purple-600/10 file:text-purple-400 hover:file:bg-purple-600/20"
               />
             </div>
-            <div className="flex items-center gap-2 mt-2">
-              <input 
-                type="checkbox" 
-                id="extractTopics" 
-                checked={extractTopics}
-                onChange={(e) => setExtractTopics(e.target.checked)}
-                className="h-4 w-4 rounded border-gray-700 bg-gray-900 text-purple-600 focus:ring-purple-500 focus:ring-offset-gray-900"
-              />
-              <label htmlFor="extractTopics" className="text-sm text-gray-300">
-                Extract topics for Spaced Repetition (Study Material)
-              </label>
+            <div className="flex flex-col gap-2 p-3 rounded-md border border-gray-700 bg-gray-900/50 w-full">
+              <span className="text-sm font-medium text-gray-300">AI Options</span>
+              
+              {/* Process with AI */}
+              <div className="flex items-center gap-2">
+                <input 
+                  type="checkbox" 
+                  id="processWithAIVault" 
+                  checked={editingItem?.processing_status === 'completed' ? true : true}
+                  disabled={editingItem?.processing_status === 'completed'}
+                  onChange={() => {}}
+                  className="h-4 w-4 rounded border-gray-700 bg-gray-900 text-purple-600 focus:ring-purple-500 focus:ring-offset-gray-900 disabled:opacity-50"
+                />
+                <label htmlFor="processWithAIVault" className={`text-sm ${editingItem?.processing_status === 'completed' ? 'text-emerald-400' : 'text-gray-300'}`}>
+                  {editingItem?.processing_status === 'completed' 
+                    ? '✓ AI has already read this document' 
+                    : 'Process with AI (Make searchable in chat)'}
+                </label>
+              </div>
+
+              {/* Extract Topics */}
+              <div className="flex items-center gap-2">
+                <input 
+                  type="checkbox" 
+                  id="extractTopicsVault" 
+                  checked={editingItem?.extract_topics && editingItem?.processing_status === 'completed' ? true : extractTopics}
+                  disabled={editingItem?.extract_topics && editingItem?.processing_status === 'completed'}
+                  onChange={(e) => setExtractTopics(e.target.checked)}
+                  className="h-4 w-4 rounded border-gray-700 bg-gray-900 text-purple-600 focus:ring-purple-500 focus:ring-offset-gray-900 disabled:opacity-50"
+                />
+                <label htmlFor="extractTopicsVault" className={`text-sm ${editingItem?.extract_topics && editingItem?.processing_status === 'completed' ? 'text-emerald-400' : 'text-gray-300'}`}>
+                  {editingItem?.extract_topics && editingItem?.processing_status === 'completed'
+                    ? '✓ Topics already extracted for Spaced Repetition'
+                    : 'Extract topics for Spaced Repetition (Study Material)'}
+                </label>
+              </div>
             </div>
           </>
         )}

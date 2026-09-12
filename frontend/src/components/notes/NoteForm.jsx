@@ -99,18 +99,43 @@ export function NoteForm({
                 isCreating={isCreatingTag}
             />
 
-            {/* ===== Extract Topics Toggle ===== */}
-            <div className="flex items-center gap-2">
-                <input 
-                    type="checkbox" 
-                    id="extractTopicsNote" 
-                    checked={extractTopics}
-                    onChange={(e) => setExtractTopics(e.target.checked)}
-                    className="h-4 w-4 rounded border-gray-700 bg-gray-900 text-purple-600 focus:ring-purple-500 focus:ring-offset-gray-900"
-                />
-                <label htmlFor="extractTopicsNote" className="text-sm text-gray-300">
-                    Extract topics for Spaced Repetition (Study Material)
-                </label>
+            {/* ===== AI Processing Options ===== */}
+            <div className="flex flex-col gap-2 p-3 rounded-md border border-gray-700 bg-surface-card">
+                <span className="text-sm font-medium text-gray-300">AI Options</span>
+                
+                {/* Process with AI (RAG — chunk, embed, make searchable in chat) */}
+                <div className="flex items-center gap-2">
+                    <input 
+                        type="checkbox" 
+                        id="processWithAI" 
+                        checked={isEditing && initialData?.processing_status === 'completed' ? true : extractTopics || true}
+                        disabled={isEditing && initialData?.processing_status === 'completed'}
+                        onChange={() => {}}
+                        className="h-4 w-4 rounded border-gray-700 bg-gray-900 text-purple-600 focus:ring-purple-500 focus:ring-offset-gray-900 disabled:opacity-50"
+                    />
+                    <label htmlFor="processWithAI" className={`text-sm ${isEditing && initialData?.processing_status === 'completed' ? 'text-emerald-400' : 'text-gray-300'}`}>
+                        {isEditing && initialData?.processing_status === 'completed' 
+                            ? '✓ AI has already read this note' 
+                            : 'Process with AI (Make searchable in chat)'}
+                    </label>
+                </div>
+
+                {/* Extract Topics */}
+                <div className="flex items-center gap-2">
+                    <input 
+                        type="checkbox" 
+                        id="extractTopicsNote" 
+                        checked={isEditing && initialData?.extract_topics && initialData?.processing_status === 'completed' ? true : extractTopics}
+                        disabled={isEditing && initialData?.extract_topics && initialData?.processing_status === 'completed'}
+                        onChange={(e) => setExtractTopics(e.target.checked)}
+                        className="h-4 w-4 rounded border-gray-700 bg-gray-900 text-purple-600 focus:ring-purple-500 focus:ring-offset-gray-900 disabled:opacity-50"
+                    />
+                    <label htmlFor="extractTopicsNote" className={`text-sm ${isEditing && initialData?.extract_topics && initialData?.processing_status === 'completed' ? 'text-emerald-400' : 'text-gray-300'}`}>
+                        {isEditing && initialData?.extract_topics && initialData?.processing_status === 'completed'
+                            ? '✓ Topics already extracted for Spaced Repetition'
+                            : 'Extract topics for Spaced Repetition (Study Material)'}
+                    </label>
+                </div>
             </div>
 
             <div className="flex gap-3 mt-2">
