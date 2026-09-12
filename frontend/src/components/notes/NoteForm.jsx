@@ -24,7 +24,7 @@ export function NoteForm({
     const [content, setContent] = useState(initialData?.content || '');
     const [formCategory, setFormCategory] = useState(initialData?.category || '');
     const [formTags, setFormTags] = useState(initialData?.tags_detail?.map(t => t.id) || []);
-    const [extractTopics, setExtractTopics] = useState(initialData?.extract_topics ?? true);
+    const [extractTopics, setExtractTopics] = useState(initialData?.extract_topics ?? false);
 
     // When a new category is created, automatically select it
     useEffect(() => {

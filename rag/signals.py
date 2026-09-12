@@ -39,19 +39,46 @@ def trigger_document_processing(sender, instance, created, **kwargs):
 from notes.models import Note
 
 @receiver(post_save, sender=Note)
-def update_note_chunks(sender, instance, created, **kwargs):
+def trigger_note_processing(sender, instance, created, **kwargs):
     """
-    When a Note is renamed, update its chunk source_titles.
-    Notes are processed manually, so we don't auto-queue processing here.
+    Auto-trigger note processing when:
+    1. Note is newly created (created=True)
+    2. Note content changed on an already-processed note (re-process)
+    3. Note was manually set to 'pending' status (user opted-in via edit)
+    
+    Notes with processing_status='unprocessed' are auto-queued if content exists.
     """
-    if not created:
+    if created and instance.content.strip():
+        # New note with content — queue for processing
+        def queue_task():
+            from .tasks import process_note
+            instance.update_status('pending')
+            process_note.delay(instance.id)
+        transaction.on_commit(queue_task)
+    elif not created:
+        content_changed = getattr(instance, '_content_changed', False)
+        
+        if content_changed and instance.processing_status == 'completed':
+            # Content changed on processed note — re-process
+            def queue_task():
+                from .tasks import process_note
+                instance.update_status('pending')
+                process_note.delay(instance.id)
+            transaction.on_commit(queue_task)
+        elif instance.processing_status == 'pending':
+            # Manually set to pending (from API trigger) — process
+            def queue_task():
+                from .tasks import process_note
+                process_note.delay(instance.id)
+            transaction.on_commit(queue_task)
+        
+        # Title changed — update chunk titles
         if instance.title != getattr(instance, '_original_title', None):
             def update_chunks():
                 from .models import Chunk
                 from django.contrib.contenttypes.models import ContentType
                 ctype = ContentType.objects.get_for_model(Note)
                 Chunk.objects.filter(content_type=ctype, object_id=instance.id).update(source_title=instance.title)
-            
             transaction.on_commit(update_chunks)
 
 from django.db.models.signals import post_delete

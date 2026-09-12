@@ -26,7 +26,7 @@ export function UploadModal({
   
   // Document specific
   const [selectedFile, setSelectedFile] = useState(null);
-  const [extractTopics, setExtractTopics] = useState(true);
+  const [extractTopics, setExtractTopics] = useState(false);
   
   // Resource specific
   const [url, setUrl] = useState('');
@@ -46,7 +46,7 @@ export function UploadModal({
         
         if (activeTab === 'documents') {
           setSelectedFile(null); // Force re-upload if they want to change file
-          setExtractTopics(editingItem.extract_topics ?? true);
+          setExtractTopics(editingItem.extract_topics ?? false);
         } else {
           setUrl(editingItem.url || '');
           setResourceType(editingItem.resource_type || 'other');
@@ -58,7 +58,7 @@ export function UploadModal({
         setCategory('');
         setSelectedTags([]);
         setSelectedFile(null);
-        setExtractTopics(true);
+        setExtractTopics(false);
         setUrl('');
         setResourceType('other');
       }

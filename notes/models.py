@@ -25,7 +25,7 @@ class Note(ProcessingMixin, models.Model):
     )
     tags = models.ManyToManyField(Tag, blank=True, related_name='notes')
     is_pinned = models.BooleanField(default=False)
-    extract_topics = models.BooleanField(default=True, help_text='If True, AI will extract topics for spaced repetition.')
+    extract_topics = models.BooleanField(default=False, help_text='If True, AI will extract topics for spaced repetition.')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

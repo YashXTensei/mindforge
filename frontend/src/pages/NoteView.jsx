@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchNote, updateNote, fetchCategories, fetchTags } from '../api/notes';
-import { triggerProcessing } from '../api/rag';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkBreaks from 'remark-breaks';
@@ -24,7 +23,7 @@ export default function NoteView() {
     const [content, setContent] = useState('');
     const [categoryId, setCategoryId] = useState('');
     const [selectedTags, setSelectedTags] = useState([]);
-    const [extractTopics, setExtractTopics] = useState(true);
+    const [extractTopics, setExtractTopics] = useState(false);
 
     // Fetch Note Data
     const { data: note, isLoading, isError } = useQuery({
@@ -50,7 +49,7 @@ export default function NoteView() {
             setContent(note.content);
             setCategoryId(note.category?.id || '');
             setSelectedTags(note.tags_detail?.map(t => t.id) || []);
-            setExtractTopics(note.extract_topics ?? true);
+            setExtractTopics(note.extract_topics ?? false);
         }
     }, [note, isEditing]);
 
@@ -61,18 +60,6 @@ export default function NoteView() {
             queryClient.invalidateQueries(['notes']);
             setIsEditing(false); // Wapas Read Mode me jao
         }
-    });
-
-    // AI Processing
-    const processMutation = useMutation({
-        mutationFn: () => triggerProcessing('note', id),
-        onSuccess: (data) => {
-            toast.success(data.message || 'Note queued for AI processing!');
-            queryClient.invalidateQueries(['note', id]);
-        },
-        onError: () => {
-            toast.error('Failed to process note');
-        },
     });
 
     if (isLoading) return <div className="text-white p-10">Loading note...</div>;
@@ -101,31 +88,28 @@ export default function NoteView() {
                 
                 {!isEditing ? (
                     <div className="flex gap-2.5">
+                        {/* AI Status Badge (read-only indicator) */}
                         {(() => {
-                            const isProcessing = processMutation.isPending || ['pending', 'extracting', 'chunking', 'embedding'].includes(note.processing_status);
+                            const isProcessing = ['pending', 'extracting', 'chunking', 'embedding'].includes(note.processing_status);
                             const isReady = note.processing_status === 'completed';
 
                             return (
-                                <button
-                                    onClick={() => processMutation.mutate()}
-                                    disabled={isProcessing || isReady}
-                                    className={`border-none py-2 px-4 rounded-md cursor-pointer flex items-center gap-2 transition-colors text-sm
-                                        ${isReady
-                                            ? 'bg-emerald-500/15 text-emerald-400 cursor-default'
-                                            : isProcessing
-                                                ? 'bg-amber-500/15 text-amber-400 cursor-not-allowed'
-                                                : 'bg-purple-500/15 text-purple-400 hover:bg-purple-500/25'
-                                        }
-                                        disabled:opacity-50`}
+                                <span className={`py-2 px-4 rounded-md flex items-center gap-2 text-sm
+                                    ${isReady
+                                        ? 'bg-emerald-500/10 text-emerald-400'
+                                        : isProcessing
+                                            ? 'bg-amber-500/10 text-amber-400'
+                                            : 'bg-gray-800 text-gray-500'
+                                    }`}
                                 >
                                     {isProcessing ? (
                                         <><Loader2 size={14} className="animate-spin" /> Processing...</>
                                     ) : isReady ? (
                                         <><Sparkles size={14} /> AI Ready</>
                                     ) : (
-                                        <><Sparkles size={14} /> Process with AI</>
+                                        <><Sparkles size={14} /> Not Processed</>
                                     )}
-                                </button>
+                                </span>
                             );
                         })()}
                         <button onClick={() => setIsEditing(true)} className="bg-gray-800 border-none text-white py-2 px-4 rounded-md cursor-pointer flex items-center gap-2 hover:bg-gray-700 transition-colors">
