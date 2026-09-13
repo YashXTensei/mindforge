@@ -8,15 +8,9 @@
 
 4. Gemini SDK migration (google.generativeai → google.genai) — the old SDK shows FutureWarning
 
-~~5. Re-upload topic refresh (currently blocks new topic extraction if topics already exist)~~ (DONE)
+5. CI pipeline
 
-~~6. duplicate documents not allowed~~ (DONE)
-
-7. CI pipeline
-
-~~8. import re mid file~~ (DONE)
-
-9. test coverage
+6. test coverage
 
 # bugs to be fixed :
 
