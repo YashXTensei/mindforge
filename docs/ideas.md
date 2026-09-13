@@ -36,7 +36,7 @@
 
 ~~8. Upload time me -1 minutes show kar raha tha~~ (DONE - Math.max(0, diff) + "Just now" for < 1 min)
 
-9. Vault me Upload karte time agar checkbox AI wala unchecked ho to edit karne ke baad check karo to kuch nahi hota na processing hoti ma kuch dobara edit pe click karke dekho to unchecked dikhata ha , save nahi ho raha check mark kiya agar edit pe jake to , same problem for topic extraction , upload time pe agar check ho to sab thik ha lekin waise edit pe click karke nahi ho raha ha 
+~~9. Vault me Upload karte time agar checkbox AI wala unchecked ho to edit karne ke baad check karo to kuch nahi hota na processing hoti ma kuch dobara edit pe click karke dekho to unchecked dikhata ha , save nahi ho raha check mark kiya agar edit pe jake to , same problem for topic extraction , upload time pe agar check ho to sab thik ha lekin waise edit pe click karke nahi ho raha ha~~ (DONE - Fixed Vault DocumentSerializer to re-trigger processing correctly)
 
-10. Notes me sab shai ha agar uploading ke time ho to , jab edit karte ha to AI wala checkbox useless ha aur extraction wala bhi
-simply abhi jo dono features ha vo bekar ha , kaam hi nahi karte , loader abhi bhi khudse green nahi hota Notes me sirf , jaise hi refresh karo green ho jata ha maybe processing complete hue bina green ho jata ha refresh se :<
+~~10. Notes me sab shai ha agar uploading ke time ho to , jab edit karte ha to AI wala checkbox useless ha aur extraction wala bhi
+simply abhi jo dono features ha vo bekar ha , kaam hi nahi karte , loader abhi bhi khudse green nahi hota Notes me sirf , jaise hi refresh karo green ho jata ha maybe processing complete hue bina green ho jata ha refresh se :<~~ (DONE - Fixed NoteSerializer to re-trigger processing + Added missing refetchInterval to Notes.jsx and Dashboard.jsx for auto-polling)

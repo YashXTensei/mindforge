@@ -16,20 +16,32 @@ from vault.models import Document
 def trigger_document_processing(sender, instance, created, **kwargs):
     """
     When a new Document is uploaded, queue it for background processing.
-    Uses transaction.on_commit to ensure the DB row is committed
-    before Celery picks up the task (prevents race condition).
+    Also handles manual re-triggering from serializers when status is set to pending.
     """
+    if getattr(instance, '_signal_processing', False):
+        return
+
     if getattr(instance, '_skip_auto_process', False):
         return
 
     if created or getattr(instance, '_file_changed', False):
         def queue_task():
             from .tasks import process_document
+            instance._signal_processing = True
+            instance.update_status('pending')
+            instance._signal_processing = False
             process_document.delay(instance.id)
 
         transaction.on_commit(queue_task)
     else:
-        # If not created and file not changed, maybe title changed. Update chunks!
+        if instance.processing_status == 'pending':
+            # Serializer set it to pending (e.g. process_with_ai checked) — queue it
+            def queue_task():
+                from .tasks import process_document
+                process_document.delay(instance.id)
+            transaction.on_commit(queue_task)
+            
+        # Title changed. Update chunks!
         if instance.title != getattr(instance, '_original_title', None):
             def update_chunks():
                 from .models import Chunk

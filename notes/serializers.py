@@ -32,16 +32,19 @@ class NoteSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         process_with_ai = validated_data.pop('process_with_ai', True)
-        # Track if extract_topics was just turned on
         old_extract_topics = instance.extract_topics
+        old_status = instance.processing_status
         
         if not process_with_ai:
             instance._skip_auto_process = True
         
         note = super().update(instance, validated_data)
         
-        # If user just checked extract_topics on a completed note, re-trigger processing
+        # If user just checked extract_topics on a completed note
         if note.extract_topics and not old_extract_topics and note.processing_status == 'completed':
+            note.update_status('pending')
+        # If user checked process_with_ai on an unprocessed note
+        elif process_with_ai and old_status == 'unprocessed':
             note.update_status('pending')
         
         return note

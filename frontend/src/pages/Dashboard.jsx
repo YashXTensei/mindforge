@@ -63,13 +63,25 @@ export default function Dashboard() {
     });
 
     const { data: notes, isLoading: loadingNotes, isError: errNotes } = useQuery({
-        queryKey: ['notes', {}],
-        queryFn: () => fetchNotes({})
+        queryKey: ['notes'],
+        queryFn: () => fetchNotes(),
+        refetchInterval: (query) => {
+            const data = query.state?.data;
+            if (!data) return false;
+            const isProcessing = data.some(item => item.processing_status && !['completed', 'failed', 'unprocessed'].includes(item.processing_status));
+            return isProcessing ? 3000 : false;
+        }
     });
 
     const { data: documents, isLoading: loadingDocs, isError: errDocs } = useQuery({
         queryKey: ['documents'],
-        queryFn: () => fetchDocuments()
+        queryFn: () => fetchDocuments(),
+        refetchInterval: (query) => {
+            const data = query.state?.data;
+            if (!data) return false;
+            const isProcessing = data.some(item => item.processing_status && !['completed', 'failed', 'unprocessed'].includes(item.processing_status));
+            return isProcessing ? 3000 : false;
+        }
     });
 
     const { data: resources, isLoading: loadingRes, isError: errRes } = useQuery({

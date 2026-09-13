@@ -51,6 +51,16 @@ export default function Notes() {
         queryKey: ['notes', activeFilters],  // Filter change = fresh fetch!
         queryFn: () => fetchNotes(activeFilters),
         placeholderData: keepPreviousData, // Purana data dikhao jab tak naya aa raha hai — no blink!
+        refetchInterval: (query) => {
+            const data = query.state?.data;
+            if (!data) return false;
+            // Poll if any note is still processing
+            const isProcessing = data.some(note => 
+                note.processing_status && 
+                !['completed', 'failed', 'unprocessed'].includes(note.processing_status)
+            );
+            return isProcessing ? 3000 : false;
+        }
     });
 
     const navigate = useNavigate();

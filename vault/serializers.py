@@ -71,6 +71,7 @@ class DocumentSerializer(serializers.ModelSerializer): # Name changed
     def update(self, instance, validated_data):
         process_with_ai = validated_data.pop('process_with_ai', True)
         old_extract_topics = instance.extract_topics
+        old_status = instance.processing_status
         
         if not process_with_ai:
             instance._skip_auto_process = True
@@ -79,6 +80,9 @@ class DocumentSerializer(serializers.ModelSerializer): # Name changed
         
         # If user just checked extract_topics on a completed doc, re-trigger processing
         if doc.extract_topics and not old_extract_topics and doc.processing_status == 'completed':
+            doc.update_status('pending')
+        # If user checked process_with_ai on an unprocessed doc
+        elif process_with_ai and old_status == 'unprocessed':
             doc.update_status('pending')
         
         return doc
