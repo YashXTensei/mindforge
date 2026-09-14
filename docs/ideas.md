@@ -12,6 +12,8 @@
 
 6. test coverage
 
+7.change gemini models version to newer models 
+
 # bugs to be fixed :
 
 1. Jab ham edit karke Check box check karte ha to jo waha green color me ready time dikhata ha vo uploaded pdf se calculate kar raha ha maybe , it needs to be checked 
