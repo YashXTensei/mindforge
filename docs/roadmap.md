@@ -1,6 +1,6 @@
 # MindForge Roadmap (Revised)
 
-> Last Updated: 7 September 2026
+> Last Updated: 17 September 2026
 
 ## Vision
 
@@ -31,15 +31,13 @@ Set up project infrastructure before writing features.
 - [x] Design database schema (ER diagram)
 - [x] Set up PostgreSQL
 - [x] Create Django project + DRF setup
-- [ ] Create React project with Vite
-- [ ] Set up Docker Compose
-- [ ] Pick UI design reference
-- [ ] Choose color palette and font
+- [x] Create React project with Vite
+- [x] Pick UI design reference
+- [x] Choose color palette and font
 
 ## What You'll Learn
 
 - PostgreSQL setup
-- Docker Compose basics
 - Project scaffolding
 
 ## Project Value: 0/10
@@ -63,7 +61,7 @@ Build the CRUD backbone with auth.
 
 ## NOT in this phase
 
-Goals, Tasks, Priorities, Deadlines — deferred to Phase 6 (AI Actions).
+Goals, Tasks, Priorities, Deadlines — deferred to Phase 7 (Study Planner).
 
 ## What You'll Learn
 
@@ -77,15 +75,14 @@ Goals, Tasks, Priorities, Deadlines — deferred to Phase 6 (AI Actions).
 
 ## Exit Criteria
 
-- [ ] User can register, login, stay logged in
-- [ ] Full CRUD on notes with markdown rendering
-- [ ] Tags and categories filter notes
-- [ ] Dashboard shows recent notes
-- [ ] API has basic test coverage
+- [x] User can register, login, stay logged in
+- [x] Full CRUD on notes with markdown rendering
+- [x] Tags and categories filter notes
+- [x] Dashboard shows recent notes
 
 ---
 
-✅done phase 1 {date : 8th july 2026}
+✅ done Phase 1 {date : 8th July 2026}
 
 # Phase 2 — Knowledge Vault
 
@@ -99,12 +96,12 @@ Turn MindForge from a notes app into a knowledge repository.
 
 - **PDF Upload**: Upload, store, view metadata
 - **Resource Vault**: Save articles, videos, docs with metadata
-- **Shared Categories**: Across Notes, PDFs, Resources
+- **Shared Categories**: Across Notes, PDFs, Resources (taxonomy app)
 - **Full-Text Search**: PostgreSQL tsvector across all content
 
 ## What You'll Learn
 
-- File upload handling (validation, size limits, storage)
+- File upload handling (validation, size limits, Cloudinary storage)
 - PostgreSQL full-text search (SearchVector, SearchQuery, SearchRank)
 - Database indexing
 - Unified search API across multiple models
@@ -113,16 +110,16 @@ Turn MindForge from a notes app into a knowledge repository.
 
 ## Exit Criteria
 
-- [ ] PDFs upload and display correctly
-- [ ] Resources save with type classification
-- [ ] Search returns results across notes, PDFs, resources
-- [ ] Search feels fast (under 200ms)
+- [x] PDFs upload and display correctly
+- [x] Resources save with type classification
+- [x] Search returns results across notes, PDFs, resources
+- [x] Search feels fast (under 200ms)
 
 ---
 
-✅done {date : 14th july 2026}
+✅ done {date : 14th July 2026}
 
-💖polishing of phase 2 {15th july 2026 to 18th july 2026} 
+💖 polishing of Phase 2 {15th July 2026 to 18th July 2026}
 
 # Phase 3 — RAG Engine ⭐
 
@@ -137,7 +134,7 @@ Make AI understand YOUR knowledge with Retrieval-Augmented Generation.
 ## Features
 
 - **Chunking Pipeline**: Split notes/PDFs into meaningful chunks with source references
-- **Embeddings**: Vector embeddings via Cohere Embed v3 (free), stored in PGVector
+- **Embeddings**: Vector embeddings via Cohere Embed v3, stored in PGVector
 - **Background Processing**: Celery + Redis for chunking/embedding on upload
 - **Semantic Search**: Find content by meaning, not just keywords
 - **Chat With Knowledge**: Ask questions, get answers from YOUR content
@@ -161,25 +158,25 @@ Deploy at this point. You have: Auth + Notes + Knowledge Vault + RAG Chat + Sour
 
 ## Exit Criteria
 
-- [ ] PDF upload triggers background chunking + embedding
-- [ ] Semantic search returns relevant results
-- [ ] Chat answers questions using YOUR content
-- [ ] Every response includes source citations
-- [ ] Celery processes without blocking API
+- [x] PDF upload triggers background chunking + embedding
+- [x] Semantic search returns relevant results
+- [x] Chat answers questions using YOUR content
+- [x] Every response includes source citations
+- [x] Celery processes without blocking API
 
 ---
 
-✅done {date : 25th july 2026}
+✅ done {date : 25th July 2026}
 
-💖polishing phase {date : 26th july 2026 to 1st august 2026}
+💖 polishing phase {date : 26th July 2026 to 1st August 2026}
 
-# Phase 3.5 - Some minor Improvements before Phase 4
+# Phase 3.5 - Improvements & Deployment
 
-✅done {date : 8th august 2026}
+✅ done {date : 8th August 2026}
 
-{deployment process : 9th august 2026 to 10th august 2026}
+{deployment process : 9th August 2026 to 10th August 2026}
 
-{deployed with custom domain on 14th august 2026 https://www.mindtensei.me}
+{deployed with custom domain on 14th August 2026 https://www.mindtensei.me}
 
 # Phase 4 — Proactive Learning Engine ⭐
 
@@ -229,10 +226,11 @@ Build a spaced repetition engine with adaptive, context-aware review sessions. T
 
 ---
 
-✅done {date : 31st august 2026}
+✅ done {date : 31st August 2026}
 ✅ Phase 4 Hardening completed on 7 Sep 2026 with 15 bug fixes.
 
-{phase 5 started : 7 Sep 2026}
+{Phase 5 started : 7 Sep 2026}
+
 # Phase 5 — Knowledge Compiler & Graph ⭐⭐
 
 **Time: 3-4 weeks**
@@ -254,26 +252,37 @@ Transform raw text (chunks, embeddings) into a structured knowledge representati
 ## What You'll Learn
 
 - Structured knowledge extraction via LLM (beyond simple topic tagging)
-- D3.js force-directed graphs (or react-force-graph)
+- D3.js force-directed graphs (react-force-graph-2d)
 - Graph data structures, traversal, and prerequisite chain algorithms
-- Gap analysis on directed graphs (topological sorting, reachability)
+- Gap analysis on directed graphs (BFS, reachability)
 - Interactive data visualization with complex state
 
 ## Project Value: 9.0/10
 
 ## Exit Criteria
 
-- [ ] Knowledge Compiler extracts claims + evidence from documents
-- [ ] Prerequisite relationships are auto-detected between topics
-- [ ] Interactive graph renders with mastery-colored nodes and directed edges
-- [ ] Gap Analysis answers "What am I missing to understand X?" with real graph computation
+- [x] Knowledge Compiler extracts claims + evidence from documents
+- [x] Prerequisite relationships are auto-detected between topics
+- [x] Interactive graph renders with mastery-colored nodes and directed edges
+- [x] Gap Analysis answers "What am I missing to understand X?" with real graph computation
 - [ ] Blind spots are highlighted visually
+- [ ] Gemini SDK migrated (google.generativeai → google.genai)
+- [ ] CI pipeline setup (GitHub Actions)
+
+---
+
+## Phase 5 Closure Checklist (remaining items before marking done)
+
+- [ ] Daily Review intermittent bug — investigate & fix
+- [ ] Gemini SDK migration (google.generativeai → google.genai) across 3 files
+- [ ] Blind spot visualization in Knowledge Graph (isolated nodes)
+- [ ] CI pipeline (GitHub Actions: backend tests + frontend build)
 
 ---
 
 # Phase 6 — Knowledge Intelligence ⭐⭐⭐
 
-**Time: 3-4 weeks**
+**Time: ~4 weeks**
 
 > MindForge doesn't just retrieve — it **thinks** across your entire knowledge base.
 
@@ -281,20 +290,41 @@ Transform raw text (chunks, embeddings) into a structured knowledge representati
 
 Build cross-document intelligence: contradiction detection, knowledge synthesis, and a learning analytics layer. MindForge proactively surfaces insights the user never asked for.
 
-## Features
+## Sub-Phases
 
-- **Contradiction Detection**: When new content is processed, compare its claims against existing claims in the knowledge base. If Document A says "X is always true" and Document B says "X is not necessarily true" → surface a Knowledge Conflict alert with both sources and context comparison.
-- **Cross-Document Synthesis**: Periodically (or on-demand), analyze relationships across documents from different uploads. Generate "Insight Cards" — "The Observer Pattern from your Design Patterns PDF is the same principle behind React's useEffect. Both are about subscribing to state changes."
-- **Learning Analytics Dashboard**: Learning velocity chart (topics mastered per week), personalized forgetting curves per topic, strength/weakness rankings, knowledge coverage map (mastered vs. just stored), study pattern insights (time-of-day performance analysis).
-- **Weekly Intelligence Report**: Auto-generated via Celery Beat — new contradictions found, new connections discovered, topics decaying, suggested focus areas, learning velocity trend.
+### Phase 6.1 — Contradiction Detection (~1 week)
+
+When new content is processed, compare its claims against existing claims in the knowledge base. If Document A says "X is always true" and Document B says "X is not necessarily true" → surface a Knowledge Conflict alert with both sources and context comparison.
+
+**Architecture:** New `intelligence` app. `Contradiction` model → cosine similarity on claim embeddings → Gemini confirmation → alert UI.
+
+### Phase 6.2 — Cross-Document Synthesis (~1 week)
+
+On-demand analysis of relationships across documents. Generate "Insight Cards" — "The Observer Pattern from your Design Patterns PDF is the same principle behind React's useEffect. Both are about subscribing to state changes."
+
+**Architecture:** `InsightCard` model → topic-pair analysis across different sources → Gemini synthesis → card carousel UI.
+
+### Phase 6.3 — Learning Analytics Dashboard (~1 week)
+
+Learning velocity chart (topics mastered per week), personalized forgetting curves per topic, strength/weakness rankings, knowledge coverage map (mastered vs. just stored), study pattern insights (time-of-day performance analysis).
+
+**Architecture:** Django ORM aggregation queries → Recharts visualizations → `/analytics` page.
+
+### Phase 6.4 — Intelligence Report (~3-4 days)
+
+**Phase 1:** On-demand "Generate Intelligence Report" button — new contradictions, new connections, decaying topics, suggested focus areas, learning velocity trend.
+
+**Phase 2 (later):** Celery Beat → automatic weekly generation (only after on-demand generation is reliable).
+
+**Architecture:** `IntelligenceReport` model → gather data from all intelligence features → Gemini summary → report display UI.
 
 ## What You'll Learn
 
 - Semantic similarity for contradiction/overlap detection (cosine similarity between claim embeddings)
 - Cross-document reasoning via LLM with structured context
-- Data visualization (Recharts / D3.js)
+- Data visualization (Recharts)
 - Aggregation queries (Django ORM annotate, aggregate, window functions)
-- Celery Beat for scheduled intelligence tasks
+- Celery Beat for scheduled intelligence tasks (Phase 6.4 Phase 2)
 - Designing proactive notification systems
 
 ## Project Value: 9.5/10
@@ -304,7 +334,7 @@ Build cross-document intelligence: contradiction detection, knowledge synthesis,
 - [ ] Contradiction Detection surfaces real conflicts between documents with source citations
 - [ ] Cross-Document Synthesis generates meaningful insight cards connecting different uploads
 - [ ] Learning velocity chart and forgetting curves render with real data
-- [ ] Weekly Intelligence Report generates automatically and contains actionable insights
+- [ ] Intelligence Report generates on-demand and contains actionable insights
 - [ ] System proactively surfaces insights without the user asking
 
 ---
@@ -347,37 +377,39 @@ Allow users to set learning goals with deadlines. MindForge analyzes the vault, 
 
 ---
 
-# Timeline Summary
+# Actual Timeline
 
 ```
-Week 1        → Phase 0 (Foundation)
-Week 2-6      → Phase 1 (Core Workspace)
-Week 7-9      → Phase 2 (Knowledge Vault)
-Week 10-15    → Phase 3 (RAG Engine)
-                ═══════════════════════
-                  MIP DEPLOYED (~3.5 months)
-                ═══════════════════════
-Week 16-19    → Phase 4 (Proactive Learning Engine)
-Week 20-23    → Phase 5 (Knowledge Compiler & Graph)
-Week 24-27    → Phase 6 (Knowledge Intelligence)
-Week 28-30    → Phase 7 (Study Planner & Brief)
-                ═══════════════════════
-                  FULL PRODUCT (~7 months)
-                ═══════════════════════
+Jun 2026      → Phase 0 (Foundation)
+Jun-Jul 2026  → Phase 1 (Core Workspace)        ✅ 8 Jul
+Jul 2026      → Phase 2 (Knowledge Vault)        ✅ 14 Jul (polished 15-18 Jul)
+Jul-Aug 2026  → Phase 3 (RAG Engine)             ✅ 25 Jul (polished 26 Jul - 1 Aug)
+Aug 2026      → Phase 3.5 (Improvements)         ✅ 8 Aug
+                ════════════════════════════
+                  MIP DEPLOYED — 14 Aug 2026
+                  https://www.mindtensei.me
+                ════════════════════════════
+Aug-Sep 2026  → Phase 4 (Learning Engine)        ✅ 31 Aug (hardened 7 Sep)
+Sep 2026      → Phase 5 (Knowledge Graph)        🔧 ~95% done
+Sep-Oct 2026  → Phase 6 (Knowledge Intelligence) ⏳ next
+Oct 2026      → Phase 7 (Study Planner & Brief)  ⏳ planned
+                ════════════════════════════
+                  FULL PRODUCT (~5 months)
+                ════════════════════════════
 ```
 
 ---
 
-# Production Practices (Built Into Every Phase)
+# Production Practices
 
-| Practice | When |
+| Practice | Status |
 |---|---|
-| Docker Compose | Phase 0 |
-| API tests (pytest) | Every phase |
-| Git + GitHub | Every phase |
-| Environment variables | Phase 0 |
-| Basic CI (GitHub Actions) | Phase 1 |
-| Deploy to Heroku/Vercel | Phase 3 (MIP) ✅ |
+| Git + GitHub | ✅ Every phase |
+| Environment variables (.env) | ✅ Phase 0 |
+| Cloudinary file storage | ✅ Phase 2 |
+| API tests (pytest) | 🟡 Partial — critical-path tests needed |
+| CI (GitHub Actions) | ⏳ Phase 5 closure |
+| Deploy to Heroku + Vercel | ✅ Phase 3 (MIP) |
 
 ---
 
@@ -400,3 +432,15 @@ without leaving a single workspace.
 
 > The system gets smarter the longer you use it. That's what separates MindForge from "upload a PDF to ChatGPT."
 
+---
+
+# Tech Debt & Deferred Items
+
+| Item | Priority | When |
+|---|---|---|
+| Gemini SDK migration (`google.generativeai` → `google.genai`) | 🔴 High | Phase 5 closure |
+| Cloudinary Direct Upload (bypass Heroku timeout) | 🟠 Medium | Post-Phase 6 |
+| Celery night worker (reduce API rate limits) | 🟢 Low | Post-Phase 7 |
+| API Key/Model fallback system | 🟢 Low | Production hardening |
+| Gemini model version updates | 🟢 Low | Ongoing |
+| Full test coverage sprint | 🟢 Low | Post-Phase 7 |

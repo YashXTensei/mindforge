@@ -1,387 +1,274 @@
-﻿# Phase 5 Implementation Plan: The Network Effect (Interactive Graph)
-
-> Last Updated: 1 September 2026
-
-## 1. Vision & Goal
-
-"MindForge doesn't just store knowledge — it *compiles* it into a structured, queryable intelligence."
-
-Phase 5 transforms isolated topics into a **connected knowledge network**. AI extracts claims, evidence, and prerequisite relationships from the user's own documents. The graph is not just a visualization — it's a **tool** that answers: *"What am I missing to understand X?"*
-
----
-
-## 2. Core Features
-
-### Keep ✅
-- **Topic Extraction**: Built in Phase 4, serves as the foundation (nodes) for the graph.
-- **RAG Pipeline**: Existing chunking and embedding pipeline provides the raw text and semantic search capabilities.
-
-### Add ⭐
-- **Knowledge Compiler (LLM)**: Analyzes already-processed text chunks to extract structured claims with evidence, and auto-detects prerequisite relationships between topics (e.g., "useEffect" -> requires -> "React Component Lifecycle").
-- **Interactive Knowledge Graph (UI)**: 2D force-directed graph using `react-force-graph-2d`. Nodes are topics, edges are prerequisite/relationship links, colors indicate mastery level, and size indicates source/claim count.
-- **Gap Analysis & Blind Spot Detection**: Backward BFS through PREREQ edges to answer "What am I missing to understand X?" and highlight isolated nodes or prerequisite gaps.
-
-### Don't Build ❌
-- Fully manual graph editing (too tedious, defeats the purpose of AI automation).
-- Overly complex multi-modal graph connections (keep it focused on text/concept relationships for now).
-- Large ontology of relationship types (PREREQ + RELATED is enough for now).
-
----
-
-## 3. Key Design Decisions (Locked In)
-
-| Decision | Choice | Reasoning |
-|----------|--------|-----------|
-| Graph library | `react-force-graph-2d` | Lighter, cleaner, mobile-friendly. No 3D needed |
-| Relationship types | `PREREQ` + `RELATED` only | Keep it simple. No large ontology yet |
-| Compiler context | Use **already-processed chunks**, NOT full documents | Saves tokens, uses existing pipeline output |
-| Topic matching | Pass **existing TopicMastery IDs + names** to Gemini, map back by ID | More reliable than fuzzy name matching |
-| Failure isolation | Compiler failure ≠ pipeline failure | Document processing, embeddings, topic extraction all succeed even if compiler crashes |
-| Recompile existing docs | Yes — idempotent Celery task | So existing users get a populated graph |
-| "Why connected?" | Store `relationship_reason` on every edge | Makes the graph *useful*, not just pretty |
-
----
-
-## 4. Database Schema (Django Models)
-
-### New App: `graph/models.py`
-
-`python
-class TopicRelationship(models.Model):
-    """Directed edges between topics in the knowledge graph."""
-    class RelationshipType(models.TextChoices):
-        PREREQUISITE = 'PREREQ', 'Is Prerequisite For'
-        RELATED = 'RELATED', 'Is Related To'
-
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    source_topic = models.ForeignKey(TopicMastery, on_delete=models.CASCADE, related_name='outgoing_edges')
-    target_topic = models.ForeignKey(TopicMastery, on_delete=models.CASCADE, related_name='incoming_edges')
-    relationship_type = models.CharField(max_length=20, choices=RelationshipType.choices)
-    weight = models.FloatField(default=1.0)  # AI confidence 0.0-1.0
-
-    # "Why are these topics connected?" — makes the graph useful
-    relationship_reason = models.TextField(
-        blank=True, default='',
-        help_text='AI-generated explanation: "B requires A because concept X from A is needed to understand Y in B"'
-    )
-
-    class Meta:
-        unique_together = ['source_topic', 'target_topic', 'relationship_type']
-
-
-class Claim(models.Model):
-    """A structured factual claim extracted from a document/note."""
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    topic = models.ForeignKey(TopicMastery, on_delete=models.CASCADE, related_name='claims')
-    claim_text = models.TextField()          # "React uses virtual DOM for efficient updates"
-    evidence_text = models.TextField()       # Direct quote from the source document
-
-    # Source tracking (Document or Note)
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
-    object_id = models.PositiveIntegerField()
-    source = GenericForeignKey('content_type', 'object_id')
-
-    created_at = models.DateTimeField(auto_now_add=True)
-`
-
----
-
-## 5. System Architecture
-
-### 5.1 The Knowledge Compiler (Celery Task Extension)
-
-Extend the existing RAG pipeline (`process_document` / `process_note`) with a new Step 6 after topic extraction. Failure is **isolated** — if compilation fails, everything else still succeeds.
-
-`
-[Phase 4 Pipeline]
-Upload → Extract Text → Chunk → Embed → Topic Extraction → TopicMastery
-
-[Phase 5 Extension — Step 6]
-                                            ↓
-                                  Knowledge Compiler Task
-                                            ↓
-               ┌────────────────────────────┴────────────────────────────┐
-               ↓                                                         ↓
-      Extract Claims (JSON)                                 Detect Relationships (JSON)
-      (Topic A: Claim 1, Evidence 1)                        (Topic A -> PREREQ -> Topic B)
-               ↓                                                         ↓
-      Save to Claim Model                                   Save to TopicRelationship Model
-`
-
-**Key approach:** Instead of sending the full document, we send **already-processed chunks** (from Step 2) + **existing TopicMastery IDs and names** so Gemini maps relationships back using IDs.
-
-**Prompt structure sent to Gemini:**
-
-`
-You are analyzing a user's study material. Here are their EXISTING topics with IDs:
-[
-  {"id": 5, "name": "React Hooks"},
-  {"id": 12, "name": "JavaScript Closures"},
-  {"id": 8, "name": "Component Lifecycle"}
-]
-
-Text chunks from the document:
-[chunk 1 text...]
-[chunk 2 text...]
-
-Extract:
-1. CLAIMS: Factual statements with direct evidence quotes, linked to topic IDs
-2. RELATIONSHIPS: Prerequisite/related connections between topic IDs with a reason WHY
-
-Return JSON:
-{
-  "claims": [
-    {"topic_id": 5, "claim": "useEffect runs after every render by default", "evidence": "...quote..."}
-  ],
-  "relationships": [
-    {
-      "source_topic_id": 12,
-      "target_topic_id": 5,
-      "type": "PREREQ",
-      "weight": 0.85,
-      "reason": "Understanding closures is essential for useEffect because the dependency array relies on closure behavior to capture variable values"
-    }
-  ]
-}
-`
-
-### 5.2 Validation (Before Saving)
-
-`python
-def _validate_relationship(source_id, target_id, rel_type, weight, user_topic_ids):
-    """Returns True only if the relationship is valid."""
-    # 1. No self-relations
-    if source_id == target_id:
-        return False
-    # 2. Both topic IDs must exist in user's topics
-    if source_id not in user_topic_ids or target_id not in user_topic_ids:
-        return False
-    # 3. Minimum confidence threshold
-    if weight < 0.5:
-        return False
-    # 4. No duplicate edges (handled by unique_together, but check first to avoid exceptions)
-    if TopicRelationship.objects.filter(
-        source_topic_id=source_id, target_topic_id=target_id, relationship_type=rel_type
-    ).exists():
-        return False
-    # 5. No obvious prerequisite cycles (A→B and B→A)
-    if rel_type == 'PREREQ' and TopicRelationship.objects.filter(
-        source_topic_id=target_id, target_topic_id=source_id, relationship_type='PREREQ'
-    ).exists():
-        return False
-    return True
-`
-
-### 5.3 Graph Computation & Gap Analysis
-
-`python
-# graph/services.py
-
-def get_graph_data(user):
-    """Serialize topics (nodes) and relationships (links) for react-force-graph."""
-    pass
-
-def analyze_gaps(user, target_topic_id):
-    """
-    Backward BFS from target_topic through PREREQ edges.
-    Identify nodes where confidence_level < 0.5 (weak) or == 0 (missing).
-    Return the full prerequisite path with status.
-    """
-    pass
-`
-
-**Gap Analysis Algorithm:**
-`
-User asks: "What do I need to master 'Distributed Consensus'?"
-
-1. Start at "Distributed Consensus" node
-2. Follow all incoming PREREQ edges backward
-3. For each prerequisite node, check confidence_level:
-   - confidence == 0  → "MISSING" (never reviewed)
-   - confidence < 0.5 → "WEAK" (needs work)
-   - confidence >= 0.5 → "OK" (skip)
-4. Recursively check prerequisites of weak/missing nodes
-5. Return the full path with status
-
-Result:
-{
-  "target": {"name": "Distributed Consensus", "confidence": 0},
-  "missing": [{"name": "Leader Election", "confidence": 0}],
-  "weak": [{"name": "Network Protocols", "confidence": 30}],
-  "path": ["Network Protocols", "Leader Election", "Distributed Consensus"]
-}
-`
-
----
-
-## 6. Celery Pipeline Integration
-
-### [MODIFY] `rag/tasks.py`
-
-Add **Step 6** to both `process_document` and `process_note` — AFTER topic extraction (Step 5):
-
-`python
-# ── Step 6: Knowledge Compiler (Phase 5) ──
-try:
-    from graph.services import compile_knowledge
-
-    # Use existing topic IDs (from Step 5) + chunks (from Step 2)
-    user_topics = TopicMastery.objects.filter(user=doc.user).values('id', 'topic_name')
-    topics_with_ids = [{"id": t['id'], "name": t['topic_name']} for t in user_topics]
-
-    compile_knowledge(doc.user, chunk_texts, topics_with_ids, doc)
-    logger.info(f"Document {doc.id}: Knowledge compilation complete")
-
-except Exception as compile_err:
-    # ⚡ ISOLATED FAILURE — doc processing still succeeds
-    logger.warning(f"Document {doc.id}: Knowledge compilation failed (non-fatal): {compile_err}")
-`
-
-### [NEW] `graph/tasks.py` — Recompile Existing Documents
-
-`python
-@shared_task
-def recompile_all_documents(user_id=None):
-    """
-    One-time task to compile knowledge from existing documents.
-    Idempotent: skips documents that already have claims/relationships.
-    Can be triggered from admin or management command.
-    """
-`
-
-- Loops through all processed Documents and Notes
-- Checks if claims already exist for that source (idempotent — skip if found)
-- Calls `compile_knowledge()` for each
-- Rate-limited to avoid hitting Gemini quota
-
----
-
-## 7. API Endpoints
-
-### [NEW] `graph/views.py`
-
-| Endpoint | Method | Purpose | Response |
-|----------|--------|---------|----------|
-| `/api/graph/network/` | GET | Full graph data for visualization | `{ "nodes": [{id, name, confidence, review_count, claim_count}], "links": [{source, target, type, weight, reason}] }` |
-| `/api/graph/topics/<id>/claims/` | GET | Claims panel for a clicked node | `[{claim_text, evidence_text, source_title, source_type}]` |
-| `/api/graph/analyze-gap/?target=<id>` | GET | Gap analysis for a target topic | `{ "target": {...}, "weak": [...], "missing": [...], "path": [...] }` |
-
-### [NEW] `graph/urls.py`
-
-`python
-urlpatterns = [
-    path('network/', GraphNetworkView.as_view()),
-    path('topics/<int:topic_id>/claims/', TopicClaimsView.as_view()),
-    path('analyze-gap/', GapAnalysisView.as_view()),
-]
-`
-
-### [MODIFY] `config/urls.py`
-
-`python
-path('api/graph/', include('graph.urls')),
-`
-
-### [MODIFY] `config/settings.py`
-
-`python
-INSTALLED_APPS = [..., 'graph']
-`
-
----
-
-## 8. Frontend Components (React + Tailwind)
-
-### [NEW] `frontend/src/pages/KnowledgeGraph.jsx`
-
-Main graph page using `react-force-graph-2d`:
-
-- **Nodes** = TopicMastery records
-  - Color: Red (`<40%`) → Yellow (`40-70%`) → Green (`>70%`) confidence
-  - Size: Scaled by claim count + source count
-  - Label: Topic name
-- **Edges** = TopicRelationship records
-  - Solid directional arrows for `PREREQ`
-  - Dashed lines for `RELATED`
-  - Hover shows `relationship_reason` ("Why are these connected?")
-- **Interactions**:
-  - **Hover node** → Tooltip with: name, confidence%, accuracy%, review count
-  - **Click node** → Side panel with:
-    - Mastery stats (confidence bar, accuracy, streak)
-    - Claims with evidence quotes and source links
-    - Connected topics (incoming/outgoing)
-    - **"Analyze Prerequisites" button** → triggers gap analysis
-  - **Gap Analysis result** → Highlights the path in the graph (red/orange nodes), shows actionable text: *"To master 'X', review 'Y' (Confidence: 10%) first"*
-
-### [NEW] `frontend/src/api/graph.js`
-
-`javascript
-export const fetchGraphData = () => API.get('/graph/network/').then(r => r.data);
-export const fetchTopicClaims = (topicId) => API.get(`/graph/topics/${topicId}/claims/`).then(r => r.data);
-export const analyzeGap = (topicId) => API.get(`/graph/analyze-gap/?target=${topicId}`).then(r => r.data);
-`
-
-### [MODIFY] `frontend/src/components/Layout.jsx`
-
-- Add nav item: `{ path: '/graph', name: 'Knowledge Graph', icon: <Share2 size={20} /> }`
-
-### [MODIFY] `frontend/src/App.jsx`
-
-- Add route: `<Route path="/graph" element={<KnowledgeGraph />} />`
-
----
-
-## 9. File Changes Summary
-
-| File | Type | What |
-|------|------|------|
-| `graph/__init__.py` | **NEW** | App init |
-| `graph/apps.py` | **NEW** | App config |
-| `graph/models.py` | **NEW** | `Claim`, `TopicRelationship` (with `relationship_reason`) |
-| `graph/admin.py` | **NEW** | Admin registration |
-| `graph/serializers.py` | **NEW** | DRF serializers |
-| `graph/services.py` | **NEW** | Knowledge Compiler + validation |
-| `graph/views.py` | **NEW** | 3 API endpoints |
-| `graph/urls.py` | **NEW** | URL routing |
-| `graph/tasks.py` | **NEW** | Recompile existing docs task |
-| `rag/tasks.py` | **MODIFY** | Add Step 6 (Knowledge Compiler hook) |
-| `config/settings.py` | **MODIFY** | Add `'graph'` to `INSTALLED_APPS` |
-| `config/urls.py` | **MODIFY** | Add `path('api/graph/', ...)` |
-| `frontend/src/api/graph.js` | **NEW** | Axios API calls |
-| `frontend/src/pages/KnowledgeGraph.jsx` | **NEW** | Main graph page |
-| `frontend/src/components/Layout.jsx` | **MODIFY** | Add sidebar nav item |
-| `frontend/src/App.jsx` | **MODIFY** | Add `/graph` route |
-
----
-
-## 10. Implementation Order
-
-| Step | What | Details |
-|------|------|---------|
-| 1 | Django app + models + migrations | `graph` app, `Claim`, `TopicRelationship`, admin, register in settings |
-| 2 | `graph/services.py` — Knowledge Compiler | Gemini prompt with topic IDs, validation logic, save claims + relationships |
-| 3 | Hook into `rag/tasks.py` (Step 6) | Isolated try/except after topic extraction |
-| 4 | `graph/views.py` + `urls.py` + serializers | 3 endpoints: network, claims, gap analysis |
-| 5 | Gap analysis algorithm | Backward BFS through PREREQ edges |
-| 6 | Install `react-force-graph-2d` | `npm install react-force-graph-2d` |
-| 7 | Build `KnowledgeGraph.jsx` | Graph + side panel + gap analysis UI |
-| 8 | Route + sidebar nav | `/graph` route, `Layout.jsx` nav item |
-| 9 | Recompile task | `graph/tasks.py` — idempotent recompile for existing docs |
-| 10 | End-to-end testing | Upload PDF → verify claims/relationships → verify graph → verify gap analysis |
-
----
-
-## 11. Verification Plan
-
-### Automated
-- Test validation logic (self-relations rejected, cycles rejected, min confidence enforced)
-- Test gap analysis algorithm with a known graph structure
-- Test idempotent recompile (running twice doesn't create duplicates)
-
-### Manual
-1. Upload a new PDF → Check Django Admin for auto-created Claims and Relationships with reasons
-2. Visit `/graph` → Verify nodes appear with correct mastery colors
-3. Click a node → Verify side panel shows claims with evidence quotes
-4. Hover an edge → Verify "Why connected?" reason tooltip
-5. Click "Analyze Prerequisites" → Verify path highlighting and actionable recommendation
-6. Run recompile task → Verify existing documents get claims without duplicates
+﻿MindForge — Final Implementation Plan
+Updated: 16 Sep 2026 — Reviewer feedback incorporated
+
+Execution Sequence
+
+┌─────────────────────────────┐
+│ Phase 5 Closure (3 items)   │ ← ~3-4 days
+├─────────────────────────────┤
+│ 1. Review bug fix           │
+│ 2. Gemini SDK migration     │
+│ 3. Blind-spot visualization │
+├─────────────────────────────┤
+│ + CI Pipeline Setup         │ ← ~1 day
+└─────────────────────────────┘
+         ↓
+    PHASE 5 CLOSED ✅
+         ↓
+┌─────────────────────────────┐
+│ Phase 6.1 — Contradictions  │ ← ~1 week
+│ Phase 6.2 — Synthesis       │ ← ~1 week
+│ Phase 6.3 — Analytics       │ ← ~1 week
+│ Phase 6.4 — Intel Report    │ ← ~3-4 days
+│ Polish + Testing            │ ← ~3-4 days
+└─────────────────────────────┘
+         ↓
+    PHASE 6 CLOSED ✅
+         ↓
+    Phase 7 — Study Planner
+Already Done (From Review's 6 Items)
+These were fixed in previous sessions — no action needed:
+
+AI Chat "No chats" loading state ✅ Done
+Notes duplicate category error message ✅ Done
+Notes topic-extraction checkbox + Process with AI ✅ Done (with auto-trigger, signal fixes, polling)
+Phase 5 Closure — 3 Remaining Items
+Item 1: Daily Review Intermittent Bug 🔴
+Bug: "Start review aaj ka ho chuka tha 10 questions usne show kiye, 6 baki the jab start review pe click karo to vo completed dikhata ha aur wahi pichla score dikha raha ha. Kabhi kabhi ye dikkat ati ha"
+
+Investigation Plan:
+
+Read 
+learning/views.py
+ — start_review / DailyReviewSession logic
+Read 
+DailyReview.jsx
+ — Frontend session state
+Check if ReviewSession query filters by date=today properly (timezone issue?)
+Check if completed session detection has a race condition
+Likely Root Cause: Timezone mismatch — server UTC vs user IST. If today is calculated in UTC but the user's "today" is IST, a session from yesterday (UTC) might show as today's completed session.
+
+Estimated Time: ~3-4 hours (investigation + fix)
+
+Item 2: Gemini SDK Migration 🟠
+Current: google.generativeai (deprecated, shows FutureWarning) Target: google.genai (new official SDK)
+
+Files to Migrate:
+
+File	Gemini Usage
+rag/chat.py
+Chat response generation
+learning/generation.py
+Topic extraction + review question generation
+graph/services.py
+Knowledge compilation (claims + relationships)
+Migration Steps:
+
+pip install google-genai + pip uninstall google-generativeai
+Update imports: import google.generativeai as genai → from google import genai
+Update client init: genai.configure(api_key=...) → client = genai.Client(api_key=...)
+Update model calls: genai.GenerativeModel(...) → client.models.generate_content(...)
+Update streaming: check if streaming API changed
+Update response_mime_type / generation_config syntax
+Update requirements.txt
+Test all 3 files
+Estimated Time: ~4-5 hours
+
+Item 3: Blind Spot Visualization 🟠
+What: Isolated nodes (topics with zero connections — no incoming or outgoing edges) should be visually highlighted in the knowledge graph.
+
+Implementation:
+
+In 
+KnowledgeGraph.jsx
+, in the node rendering callback:
+Check if a node has any links (either as source or target)
+If zero links → render with a dashed border / pulsing animation / special icon
+Add a "Blind Spots" counter in the graph stats header
+In 
+services.py
+ get_graph_data():
+Add is_isolated: true/false flag to each node
+Count isolated nodes and return as blind_spot_count
+Estimated Time: ~1-2 hours
+
+CI Pipeline Setup
+Minimum viable CI (GitHub Actions):
+
+yaml
+
+# .github/workflows/ci.yml
+name: MindForge CI
+on: [push, pull_request]
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_DB: mindforge_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports: ['5432:5432']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - run: pip install -r requirements.txt
+      - run: python manage.py test --parallel
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/mindforge_test
+          GEMINI_API_KEY: test
+          COHERE_API_KEY: test
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - run: cd frontend && npm ci && npm run build
+Estimated Time: ~2-3 hours (setup + debug + first green run)
+
+Phase 6 — Knowledge Intelligence
+IMPORTANT
+
+Principle: Each sub-phase ships independently. No feature creep. Each component is a "production-ready mini-system."
+
+Phase 6.1 — Contradiction Detection (~1 week)
+What it does: When new content is processed, compare its claims against existing claims. Surface conflicts like "Document A says X is always true, Document B says X is not necessarily true."
+
+Backend
+[NEW] intelligence/models.py
+python
+
+class Contradiction(models.Model):
+    user = ForeignKey(User)
+    claim_a = ForeignKey(Claim, related_name='contradictions_as_a')
+    claim_b = ForeignKey(Claim, related_name='contradictions_as_b')
+    similarity_score = FloatField()  # Cosine similarity between claim embeddings
+    ai_analysis = TextField()        # Gemini's explanation of the contradiction
+    status = CharField(choices=['new', 'reviewed', 'dismissed'])
+    created_at = DateTimeField(auto_now_add=True)
+[NEW] intelligence/services.py
+detect_contradictions(user, new_claims) — called after compile_knowledge() in pipeline
+Get embeddings for new claims (using Cohere, same as chunks)
+Compare against ALL existing claim embeddings (cosine similarity)
+If similarity > 0.75 but claims have different/opposing content → candidate
+Send candidates to Gemini: "Are these claims contradictory? Explain."
+Save confirmed contradictions
+[MODIFY] rag/tasks.py
+Add Step 7 after knowledge compilation: detect_contradictions(user, new_claims)
+[NEW] intelligence/views.py
+GET /api/intelligence/contradictions/ — list user's contradictions
+PATCH /api/intelligence/contradictions/<id>/ — mark as reviewed/dismissed
+Frontend
+[NEW] pages/Intelligence.jsx (or section on Dashboard)
+List of contradiction alerts with:
+Claim A text + source document
+Claim B text + source document
+AI analysis explaining the conflict
+"Dismiss" / "Mark Reviewed" actions
+Phase 6.2 — Cross-Document Synthesis (~1 week)
+What it does: Discover connections across documents the user never saw. "The Observer Pattern from your Design Patterns PDF uses the same principle as React's useEffect — both subscribe to state changes."
+
+Backend
+[NEW] intelligence/models.py (add to existing)
+python
+
+class InsightCard(models.Model):
+    user = ForeignKey(User)
+    insight_text = TextField()
+    connecting_topics = ManyToManyField(TopicMastery)
+    source_documents = JSONField()  # [{"type": "document", "id": 5, "title": "..."}, ...]
+    created_at = DateTimeField(auto_now_add=True)
+[NEW] intelligence/services.py (add)
+generate_insights(user) — On-demand (button click)
+Find topic pairs that appear in different documents
+Fetch claims from both documents for those topics
+Send to Gemini: "Find meaningful connections between these concepts from different sources"
+Save as InsightCards
+[NEW] intelligence/views.py (add)
+GET /api/intelligence/insights/ — list insight cards
+POST /api/intelligence/insights/generate/ — trigger on-demand generation
+Frontend
+Insight Cards carousel on Dashboard or Intelligence page
+"Generate New Insights" button
+Phase 6.3 — Learning Analytics (~1 week)
+What it does: Visualize learning patterns — velocity, forgetting curves, strength rankings.
+
+Backend
+[NEW] intelligence/views.py (add)
+GET /api/intelligence/analytics/ — Returns aggregated data:
+Topics mastered per week (from TopicMastery.created_at + confidence_level > 0.7)
+Forgetting curve data (from ReviewSession history — confidence over time per topic)
+Strength/weakness rankings (sorted by confidence_level)
+Knowledge coverage (mastered vs just stored — topics with reviews vs without)
+Study patterns (reviews per day-of-week, time-of-day from ReviewSession.completed_at)
+Frontend
+[NEW] pages/Analytics.jsx
+Using Recharts (already available or easy to add):
+
+Learning Velocity — Line chart (topics mastered per week over last 8 weeks)
+Strength/Weakness — Horizontal bar chart (top 10 strong + bottom 10 weak topics)
+Knowledge Coverage — Donut chart (mastered / learning / unreviewed)
+Study Patterns — Heatmap (day-of-week × time-of-day)
+Forgetting Curves — Multi-line chart for selected topics (confidence over time)
+Phase 6.4 — Intelligence Report (~3-4 days)
+What it does: Generate a summary report of learning intelligence.
+
+IMPORTANT
+
+Phase 1: On-demand button — "Generate Intelligence Report" Phase 2 (later): Celery Beat — Automatic weekly generation
+
+Backend
+[NEW] intelligence/models.py (add)
+python
+
+class IntelligenceReport(models.Model):
+    user = ForeignKey(User)
+    report_data = JSONField()  # Structured report sections
+    generated_at = DateTimeField(auto_now_add=True)
+[NEW] intelligence/services.py (add)
+generate_report(user):
+Gather: new contradictions this week, new insights, decaying topics, learning velocity
+Send to Gemini: "Summarize this learning data into an actionable report"
+Save report
+[NEW] intelligence/views.py (add)
+POST /api/intelligence/reports/generate/ — Generate report on-demand
+GET /api/intelligence/reports/ — List past reports
+GET /api/intelligence/reports/latest/ — Get latest report
+Frontend
+"Generate Report" button on Analytics or Intelligence page
+Report display with sections: New Contradictions, New Insights, Decaying Topics, Suggested Focus Areas, Velocity Trend
+New Django App Structure
+
+intelligence/
+├── __init__.py
+├── apps.py
+├── models.py       # Contradiction, InsightCard, IntelligenceReport
+├── services.py     # detect_contradictions, generate_insights, generate_report
+├── views.py        # All API endpoints
+├── serializers.py  # DRF serializers
+├── urls.py         # URL patterns
+├── admin.py        # Admin registration
+└── migrations/
+New Frontend Structure
+
+frontend/src/
+├── pages/
+│   ├── Analytics.jsx        # Learning analytics charts
+│   └── Intelligence.jsx     # Contradictions + Insights + Reports
+├── api/
+│   └── intelligence.js      # API calls
+Verification Plan
+After Phase 5 Closure
+ Daily Review bug cannot be reproduced
+ python -c "from google import genai" works (SDK migrated)
+ Knowledge Graph shows isolated nodes with visual indicator
+ CI pipeline runs green on push
+After Each Phase 6 Sub-Phase
+ 6.1: Upload a document that contradicts existing content → Contradiction alert appears
+ 6.2: Click "Generate Insights" → Meaningful cross-document connections appear
+ 6.3: Analytics page renders charts with real data
+ 6.4: Click "Generate Report" → Readable intelligence report appears
