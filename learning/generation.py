@@ -61,7 +61,24 @@ Text to analyze:
             ),
         )
         
-        topics = json.loads(response.text)
+        if not response.text:
+            logger.error("Gemini returned empty response for topic extraction")
+            return []
+            
+        text_response = response.text.strip()
+        if text_response.startswith('```json'):
+            text_response = text_response[7:-3].strip()
+        elif text_response.startswith('```'):
+            text_response = text_response[3:-3].strip()
+
+        topics = json.loads(text_response)
+        
+        # If Gemini returned a dict like {"topics": [...]}, extract the list
+        if isinstance(topics, dict):
+            for val in topics.values():
+                if isinstance(val, list):
+                    topics = val
+                    break
         
         # Validate: must be a list of strings
         if isinstance(topics, list) and all(isinstance(t, str) for t in topics):
@@ -129,7 +146,17 @@ Rules:
             ),
         )
         
-        question_data = json.loads(response.text)
+        if not response.text:
+            logger.error(f"Empty response from Gemini for question on '{topic_name}'")
+            return None
+
+        text_response = response.text.strip()
+        if text_response.startswith('```json'):
+            text_response = text_response[7:-3].strip()
+        elif text_response.startswith('```'):
+            text_response = text_response[3:-3].strip()
+
+        question_data = json.loads(text_response)
         
         # Validate the response structure
         required_keys = {'question', 'options', 'correct_answer', 'explanation'}
@@ -259,8 +286,25 @@ Rules:
             ),
         )
         
-        questions_array = json.loads(response.text)
+        if not response.text:
+            logger.error("Gemini returned empty response for batch question generation")
+            return []
+
+        text_response = response.text.strip()
+        if text_response.startswith('```json'):
+            text_response = text_response[7:-3].strip()
+        elif text_response.startswith('```'):
+            text_response = text_response[3:-3].strip()
+
+        questions_array = json.loads(text_response)
         
+        # If Gemini returned a dict like {"questions": [...]}, extract the list
+        if isinstance(questions_array, dict):
+            for val in questions_array.values():
+                if isinstance(val, list):
+                    questions_array = val
+                    break
+
         # Validate output is a list
         if not isinstance(questions_array, list):
             logger.error("Batch generation did not return a list")

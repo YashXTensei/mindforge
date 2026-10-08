@@ -137,7 +137,17 @@ Rules:
             ),
         )
 
-        result = json.loads(response.text)
+        if not response.text:
+            logger.error("Claims-only extraction returned empty response from Gemini")
+            return
+
+        text_response = response.text.strip()
+        if text_response.startswith('```json'):
+            text_response = text_response[7:-3].strip()
+        elif text_response.startswith('```'):
+            text_response = text_response[3:-3].strip()
+
+        result = json.loads(text_response)
         claims_data = result.get('claims', [])
         _save_claims(user, claims_data, topics_with_ids, source_obj)
         logger.info(f"Knowledge compiler (claims-only): Saved {len(claims_data)} claims")
@@ -205,7 +215,17 @@ Rules:
             ),
         )
 
-        result = json.loads(response.text)
+        if not response.text:
+            logger.error("Compiler: Empty response from Gemini")
+            return None
+
+        text_response = response.text.strip()
+        if text_response.startswith('```json'):
+            text_response = text_response[7:-3].strip()
+        elif text_response.startswith('```'):
+            text_response = text_response[3:-3].strip()
+
+        result = json.loads(text_response)
 
         # Basic structure validation
         if not isinstance(result, dict):

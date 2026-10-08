@@ -155,6 +155,8 @@ def chat(conversation_id, user_message, user):
         )
 
         assistant_content = response.text
+        if not assistant_content:
+            raise ValueError("Gemini returned empty response (possibly blocked by safety filters)")
         
         # LLM-Based Source Filtering (Interim Regex Solution)
         # Check which [Source X] tags were actually cited in the response
