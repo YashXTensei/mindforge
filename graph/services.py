@@ -18,15 +18,19 @@ from collections import deque
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 
 from learning.models import TopicMastery
 from .models import TopicRelationship, Claim
 
 logger = logging.getLogger(__name__)
 
-# Configure Gemini (same pattern as rag/chat.py and learning/generation.py)
-genai.configure(api_key=settings.GEMINI_API_KEY)
+# Initialize Gemini client with 60s timeout (new unified SDK)
+gemini_client = genai.Client(
+    api_key=settings.GEMINI_API_KEY,
+    http_options=types.HttpOptions(timeout=60_000),
+)
 
 
 # ──────────────────────────────────────────────
@@ -101,7 +105,7 @@ def _extract_claims_only(user, chunk_texts, topics_with_ids, source_obj):
         if len(combined_text) > 15000:
             combined_text = combined_text[:15000]
 
-        model = genai.GenerativeModel(settings.RAG_CONFIG['EXTRACTION_MODEL'])
+        model_name = settings.RAG_CONFIG['EXTRACTION_MODEL']
 
         topic = topics_with_ids[0]
         prompt = f"""Analyze the following text and extract key factual claims about the topic "{topic['name']}".
@@ -124,13 +128,13 @@ Rules:
 3. Keep claims concise (1-2 sentences max).
 4. Return ONLY valid JSON."""
 
-        response = model.generate_content(
-            prompt,
-            generation_config=genai.types.GenerationConfig(
+        response = gemini_client.models.generate_content(
+            model=model_name,
+            contents=prompt,
+            config=types.GenerateContentConfig(
                 temperature=0.1,
                 response_mime_type="application/json",
             ),
-            request_options={"timeout": 30}
         )
 
         result = json.loads(response.text)
@@ -147,7 +151,7 @@ def _call_gemini_compiler(combined_text: str, topics_json: str) -> dict | None:
     Single Gemini call to extract both claims AND relationships.
     Uses EXTRACTION_MODEL (gemini-3.5-flash) for speed and cost.
     """
-    model = genai.GenerativeModel(settings.RAG_CONFIG['EXTRACTION_MODEL'])
+    model_name = settings.RAG_CONFIG['EXTRACTION_MODEL']
 
     prompt = f"""You are analyzing a user's study material to build their knowledge graph.
 
@@ -192,13 +196,13 @@ Rules:
 10. Return ONLY valid JSON."""
 
     try:
-        response = model.generate_content(
-            prompt,
-            generation_config=genai.types.GenerationConfig(
+        response = gemini_client.models.generate_content(
+            model=model_name,
+            contents=prompt,
+            config=types.GenerateContentConfig(
                 temperature=0.1,
                 response_mime_type="application/json",
             ),
-            request_options={"timeout": 45}
         )
 
         result = json.loads(response.text)
@@ -378,6 +382,7 @@ def get_graph_data(user):
     )
 
     links = []
+    connected_ids = set()
     for r in relationships:
         links.append({
             'source': r['source_topic_id'],
@@ -386,6 +391,11 @@ def get_graph_data(user):
             'weight': round(r['weight'], 2),
             'reason': r['relationship_reason'],
         })
+        connected_ids.add(r['source_topic_id'])
+        connected_ids.add(r['target_topic_id'])
+
+    for n in nodes:
+        n['is_isolated'] = n['id'] not in connected_ids
 
     return {'nodes': nodes, 'links': links}
 

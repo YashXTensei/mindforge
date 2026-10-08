@@ -8,15 +8,19 @@ Flow:
 import logging
 import re
 import traceback
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 from django.conf import settings
 from .search import get_context_for_chat
 from .models import ChatConversation, ChatMessage
 
 logger = logging.getLogger(__name__)
 
-# Configure Gemini
-genai.configure(api_key=settings.GEMINI_API_KEY)
+# Initialize Gemini client with 60s timeout (new unified SDK)
+gemini_client = genai.Client(
+    api_key=settings.GEMINI_API_KEY,
+    http_options=types.HttpOptions(timeout=60_000),
+)
 
 SYSTEM_PROMPT = """You are MindForge AI — a helpful assistant and a Personal AI Operating System.
 You help the user manage their knowledge base, but you are also a highly capable general AI assistant.
@@ -123,28 +127,31 @@ def chat(conversation_id, user_message, user):
         conversation=conversation
     ).order_by('-created_at')[:10]
 
-    # Build Gemini chat history
-    gemini_history = []
+    # Build contents list with history + current message
+    contents = []
     for msg in reversed(list(history)):
         if msg.id == user_msg.id:
-            continue  # skip current message, we'll send it separately
-        gemini_history.append({
-            'role': 'user' if msg.role == 'user' else 'model',
-            'parts': [msg.content],
-        })
+            continue  # skip current message, we'll add it at the end
+        contents.append(types.Content(
+            role='user' if msg.role == 'user' else 'model',
+            parts=[types.Part(text=msg.content)],
+        ))
+    # Add current user message at the end
+    contents.append(types.Content(
+        role='user',
+        parts=[types.Part(text=user_message)],
+    ))
 
-    # Call Gemini
+    # Call Gemini with new SDK
     model_name = settings.RAG_CONFIG['CHAT_MODEL']
-    model = genai.GenerativeModel(
-        model_name=model_name,
-        system_instruction=system_prompt,
-    )
 
     try:
-        chat_session = model.start_chat(history=gemini_history)
-        response = chat_session.send_message(
-            user_message,
-            request_options={"timeout": 30}
+        response = gemini_client.models.generate_content(
+            model=model_name,
+            contents=contents,
+            config=types.GenerateContentConfig(
+                system_instruction=system_prompt,
+            ),
         )
 
         assistant_content = response.text
@@ -170,7 +177,7 @@ def chat(conversation_id, user_message, user):
         # Extract token usage if available
         prompt_tokens = None
         completion_tokens = None
-        if hasattr(response, 'usage_metadata'):
+        if hasattr(response, 'usage_metadata') and response.usage_metadata:
             usage = response.usage_metadata
             prompt_tokens = getattr(usage, 'prompt_token_count', None)
             completion_tokens = getattr(usage, 'candidates_token_count', None)
@@ -187,6 +194,17 @@ def chat(conversation_id, user_message, user):
                 "I am currently experiencing a high volume of requests and have reached the AI provider's rate limit. "
                 "Please wait approximately **30 to 60 seconds** before sending another message.\n\n"
                 "*(Note: The current free tier allows a maximum of 5 requests per minute.)*"
+            )
+        elif '404' in error_msg or 'not found' in error_msg:
+            assistant_content = (
+                f"❌ **Model Configuration Error**\n\n"
+                f"The configured AI model (`{model_name}`) was not found or is not available on this API key. "
+                f"Please verify `GEMINI_CHAT_MODEL` in your environment or Heroku settings."
+            )
+        elif 'timeout' in error_msg or 'timed out' in error_msg:
+            assistant_content = (
+                "⏱️ **Request Timed Out**\n\n"
+                "The AI model took longer than 60 seconds to respond. Please try sending your query again."
             )
         else:
             assistant_content = (

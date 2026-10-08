@@ -9,12 +9,16 @@ Two main jobs:
 import json
 import logging
 from django.conf import settings
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 
 logger = logging.getLogger(__name__)
 
-# Initialize Gemini — same pattern as rag/chat.py
-genai.configure(api_key=settings.GEMINI_API_KEY)
+# Initialize Gemini client with 60s timeout (new unified SDK)
+gemini_client = genai.Client(
+    api_key=settings.GEMINI_API_KEY,
+    http_options=types.HttpOptions(timeout=60_000),
+)
 
 
 def extract_topics_from_text(text: str) -> list[str]:
@@ -27,7 +31,6 @@ def extract_topics_from_text(text: str) -> list[str]:
     """
     try:
         # User requested to use the EXTRACTION_MODEL (gemini-3.5-flash-lite) for topic extraction
-        model = genai.GenerativeModel(settings.RAG_CONFIG['EXTRACTION_MODEL'])
         
         # Dynamically calculate max topics based on document length.
         # Assume ~3000 chars per page. We want approx 1 topic per page, min 5, max 30.
@@ -49,13 +52,13 @@ Rules:
 Text to analyze:
 {text}"""
         
-        response = model.generate_content(
-            prompt,
-            generation_config=genai.types.GenerationConfig(
-                temperature=0.1,  # Low temp = consistent, predictable JSON output
-                response_mime_type="application/json",  # Forces Gemini to return valid JSON
+        response = gemini_client.models.generate_content(
+            model=settings.RAG_CONFIG['EXTRACTION_MODEL'],
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                temperature=0.1,
+                response_mime_type="application/json",
             ),
-            request_options={"timeout": 15}
         )
         
         topics = json.loads(response.text)
@@ -87,8 +90,6 @@ def generate_review_question(topic_name: str, context_text: str, difficulty: int
     not generic React trivia from the internet.
     """
     try:
-        model = genai.GenerativeModel(settings.RAG_CONFIG['QUESTION_MODEL'])
-        
         # Map difficulty int to descriptive instruction for Gemini
         difficulty_map = {
             1: "EASY — Test basic recall and definitions. The answer should be directly stated in the context.",
@@ -119,13 +120,13 @@ Rules:
 4. DO NOT start questions with meta-phrases like "Based on the provided notes", "According to the context", or "In the text". Frame the question directly and naturally.
 5. Return ONLY valid JSON, nothing else."""
 
-        response = model.generate_content(
-            prompt,
-            generation_config=genai.types.GenerationConfig(
-                temperature=0.7,  # Slightly higher temp for variety in questions
+        response = gemini_client.models.generate_content(
+            model=settings.RAG_CONFIG['QUESTION_MODEL'],
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                temperature=0.7,
                 response_mime_type="application/json",
             ),
-            request_options={"timeout": 15}
         )
         
         question_data = json.loads(response.text)
@@ -197,8 +198,6 @@ def generate_review_questions_batch(topics_data: list[dict]) -> list[dict]:
         return []
         
     try:
-        model = genai.GenerativeModel(settings.RAG_CONFIG['QUESTION_MODEL'])
-        
         # Build the batch prompt
         prompt = "Generate EXACTLY ONE multiple-choice question for each of the following topics.\n\n"
         prompt += "IMPORTANT SOURCE-FIRST STRATEGY:\n"
@@ -251,13 +250,13 @@ Rules:
 6. Tailor question complexity based on the user's stats — if accuracy is high, push harder within the given difficulty level.
 7. DO NOT start questions with meta-phrases like "Based on the provided notes", "According to the context", or "In the text". Frame the question directly and naturally.
 """
-        response = model.generate_content(
-            prompt,
-            generation_config=genai.types.GenerationConfig(
+        response = gemini_client.models.generate_content(
+            model=settings.RAG_CONFIG['QUESTION_MODEL'],
+            contents=prompt,
+            config=types.GenerateContentConfig(
                 temperature=0.7,
                 response_mime_type="application/json",
             ),
-            request_options={"timeout": 30}
         )
         
         questions_array = json.loads(response.text)

@@ -6,13 +6,17 @@ Uses Gemini Vision API to convert images into structured text.
 import json
 import logging
 import pathlib
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
-# Configure Gemini for Vision
-genai.configure(api_key=settings.GEMINI_API_KEY)
+# Initialize Gemini client with 60s timeout (new unified SDK)
+gemini_client = genai.Client(
+    api_key=settings.GEMINI_API_KEY,
+    http_options=types.HttpOptions(timeout=60_000),
+)
 
 VISION_PROMPT = """
 You are an expert AI vision assistant for a knowledge base (MindForge).
@@ -57,18 +61,19 @@ def describe_image(image_path: str) -> dict:
     mime_type = MIME_TYPES.get(ext, 'image/jpeg')
 
     try:
-        model = genai.GenerativeModel(model_name)
-
         logger.info(f"Reading image bytes from {image_path}")
         image_bytes = pathlib.Path(image_path).read_bytes()
 
-        image_part = {
-            "mime_type": mime_type,
-            "data": image_bytes,
-        }
-
         logger.info(f"Sending image to Gemini Vision (model: {model_name})")
-        response = model.generate_content([VISION_PROMPT, image_part])
+        response = gemini_client.models.generate_content(
+            model=model_name,
+            contents=[
+                types.Content(role='user', parts=[
+                    types.Part(text=VISION_PROMPT),
+                    types.Part(inline_data=types.Blob(mime_type=mime_type, data=image_bytes)),
+                ]),
+            ],
+        )
 
         # Parse JSON from response
         text_response = response.text.strip()
@@ -111,24 +116,22 @@ If a page has no text, return an empty string for that element.
 Return ONLY the JSON array, with no markdown formatting.
     """
 
-    content_parts = [prompt]
+    content_parts = [types.Part(text=prompt)]
     for img_bytes in image_bytes_list:
-        content_parts.append({
-            "mime_type": "image/jpeg",
-            "data": img_bytes,
-        })
+        content_parts.append(
+            types.Part(inline_data=types.Blob(mime_type="image/jpeg", data=img_bytes))
+        )
 
     try:
-        model = genai.GenerativeModel(model_name)
         logger.info(f"Sending batch of {len(image_bytes_list)} pages to Gemini Vision")
         
-        response = model.generate_content(
-            content_parts,
-            generation_config=genai.types.GenerationConfig(
+        response = gemini_client.models.generate_content(
+            model=model_name,
+            contents=[types.Content(role='user', parts=content_parts)],
+            config=types.GenerateContentConfig(
                 temperature=0.1,
                 response_mime_type="application/json",
             ),
-            request_options={"timeout": 60} # Longer timeout for batch images
         )
 
         text_response = response.text.strip()

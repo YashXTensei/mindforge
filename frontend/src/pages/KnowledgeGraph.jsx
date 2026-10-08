@@ -122,11 +122,17 @@ export default function KnowledgeGraph() {
             : 'rgba(100, 100, 100, 0.3)';
         ctx.fill();
 
-        // Selected ring
+        // Selected ring or Isolated ring
         if (isSelected) {
             ctx.strokeStyle = '#A076F9';
             ctx.lineWidth = 2;
             ctx.stroke();
+        } else if (node.is_isolated && isHighlighted) {
+            ctx.strokeStyle = 'rgba(239, 68, 68, 0.8)'; // Red
+            ctx.setLineDash([2, 2]);
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+            ctx.setLineDash([]);
         }
 
         // Label
@@ -188,6 +194,7 @@ export default function KnowledgeGraph() {
     const totalNodes = graphData?.nodes?.length || 0;
     const totalLinks = graphData?.links?.length || 0;
     const prereqCount = graphData?.links?.filter(l => l.type === 'PREREQ').length || 0;
+    const isolatedCount = graphData?.nodes?.filter(n => n.is_isolated).length || 0;
 
     // ── Loading State ──
     if (isLoading) {
@@ -239,6 +246,7 @@ export default function KnowledgeGraph() {
                     </h1>
                     <p className="text-gray-400">
                         {totalNodes} topics · {prereqCount} prerequisites · {totalLinks - prereqCount} related
+                        {isolatedCount > 0 && <span className="text-red-400 ml-1">· {isolatedCount} blind spots</span>}
                     </p>
                 </div>
 

@@ -56,7 +56,7 @@ def test_document_deletion_preserves_review_history():
     mastery = TopicMastery.objects.create(
         user=user, 
         topic_name='Test Concept',
-        next_review_date=timezone.now().date()
+        next_review_date=timezone.localdate()
     )
     
     ctype = ContentType.objects.get_for_model(Document)
@@ -92,11 +92,11 @@ def test_document_deletion_preserves_review_history():
 
 # 4. Prompt Generation Source-First
 @pytest.mark.django_db
-@patch('google.generativeai.GenerativeModel.generate_content')
-def test_generate_review_questions_batch_prompt(mock_generate):
+@patch('learning.generation.gemini_client')
+def test_generate_review_questions_batch_prompt(mock_client):
     mock_response = MagicMock()
     mock_response.text = "[]"
-    mock_generate.return_value = mock_response
+    mock_client.models.generate_content.return_value = mock_response
 
     topics_data = [{
         "topic_name": "Test Topic",
@@ -106,7 +106,8 @@ def test_generate_review_questions_batch_prompt(mock_generate):
     
     generate_review_questions_batch(topics_data)
     
-    called_prompt = mock_generate.call_args[0][0]
+    call_kwargs = mock_client.models.generate_content.call_args
+    called_prompt = call_kwargs.kwargs.get('contents', '')
     
     # Check that source-first strategy is communicated
     assert "primarily base your question on that material" in called_prompt

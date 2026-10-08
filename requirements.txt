@@ -1,4 +1,4 @@
-﻿amqp==5.3.1
+amqp==5.3.1
 annotated-types==0.7.0
 anyio==4.14.2
 asgiref==3.11.1
@@ -32,7 +32,6 @@ google-api-python-client==2.198.0
 google-auth==2.56.0
 google-auth-httplib2==0.4.0
 google-genai==2.14.0
-google-generativeai==0.8.6
 googleapis-common-protos==1.75.0
 grpcio==1.82.1
 grpcio-status==1.71.2

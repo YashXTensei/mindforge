@@ -9,10 +9,10 @@
 
 ## Phase 5 Closure (Next Up)
 
-- [ ] Gemini SDK migration (google.generativeai → google.genai) — 3 files: rag/chat.py, learning/generation.py, graph/services.py
-- [ ] Blind spot visualization in Knowledge Graph (isolated nodes highlight)
-- [ ] CI pipeline (GitHub Actions: backend tests + frontend build)
-- [ ] Daily Review intermittent bug — investigate & fix
+- [x] Gemini SDK migration (google.generativeai → google.genai) — 3 files: rag/chat.py, learning/generation.py, graph/services.py
+- [x] Blind spot visualization in Knowledge Graph (isolated nodes highlight)
+- [x] CI pipeline (GitHub Actions: backend tests + frontend build)
+- [x] Daily Review intermittent bug — investigate & fix
 
 ## Completed Features
 
@@ -29,9 +29,10 @@
 ## Open
 
 1. Jab ham edit karke checkbox check karte ha to jo waha green color me ready time dikhata ha vo uploaded pdf se calculate kar raha ha maybe — needs investigation
-2. Daily Review intermittent bug: Start review pe click karo to vo completed dikhata ha aur wahi pichla score — kabhi kabhi hota ha (likely timezone mismatch)
 
 ## Fixed
+
+- ~~Daily Review intermittent bug (timezone mismatch fixed with timezone.localdate())~~ ✅
 
 - ~~AI chat pe jab chats load hoti ha to "No chats" dikhata ha~~ ✅ (Loading state fix)
 - ~~Notes me new category add karne pe unclear error~~ ✅ (Clear error message)

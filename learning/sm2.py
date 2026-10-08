@@ -59,7 +59,7 @@ def update_sm2(mastery: TopicMastery, quality: int) -> None:
     # 5. Set timestamps
     mastery.last_reviewed = timezone.now()
     # Next review date is calculated from today
-    mastery.next_review_date = timezone.now().date() + timedelta(days=mastery.review_interval_days)
+    mastery.next_review_date = timezone.localdate() + timedelta(days=mastery.review_interval_days)
     
     # Save the updated mastery record
     mastery.save()

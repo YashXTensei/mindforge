@@ -265,18 +265,18 @@ Transform raw text (chunks, embeddings) into a structured knowledge representati
 - [x] Prerequisite relationships are auto-detected between topics
 - [x] Interactive graph renders with mastery-colored nodes and directed edges
 - [x] Gap Analysis answers "What am I missing to understand X?" with real graph computation
-- [ ] Blind spots are highlighted visually
-- [ ] Gemini SDK migrated (google.generativeai → google.genai)
-- [ ] CI pipeline setup (GitHub Actions)
+- [x] Blind spots are highlighted visually
+- [x] Gemini SDK migrated (google.generativeai → google.genai)
+- [x] CI pipeline setup (GitHub Actions)
 
 ---
 
 ## Phase 5 Closure Checklist (remaining items before marking done)
 
-- [ ] Daily Review intermittent bug — investigate & fix
-- [ ] Gemini SDK migration (google.generativeai → google.genai) across 3 files
-- [ ] Blind spot visualization in Knowledge Graph (isolated nodes)
-- [ ] CI pipeline (GitHub Actions: backend tests + frontend build)
+- [x] Daily Review intermittent bug — investigate & fix
+- [x] Gemini SDK migration (google.generativeai → google.genai) across 3 files
+- [x] Blind spot visualization in Knowledge Graph (isolated nodes)
+- [x] CI pipeline (GitHub Actions: backend tests + frontend build)
 
 ---
 

@@ -35,7 +35,7 @@ class DailyReviewView(views.APIView):
         Get today's review session. If one doesn't exist, create it.
         """
         user = request.user
-        today = timezone.now().date()
+        today = timezone.localdate()
 
         # 1. Check if user has an active session
         session = ReviewSession.objects.filter(
