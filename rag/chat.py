@@ -7,6 +7,7 @@ Flow:
 
 import logging
 import re
+import time
 import traceback
 from google import genai
 from google.genai import types
@@ -186,7 +187,6 @@ def chat(conversation_id, user_message, user):
 
     except Exception as e:
         logger.error(f"Gemini API error: {str(e)}")
-        import traceback
         logger.error(traceback.format_exc())  # Log full trace server-side only
 
         error_msg = str(e).lower()
@@ -196,6 +196,12 @@ def chat(conversation_id, user_message, user):
                 "I am currently experiencing a high volume of requests and have reached the AI provider's rate limit. "
                 "Please wait approximately **30 to 60 seconds** before sending another message.\n\n"
                 "*(Note: The current free tier allows a maximum of 5 requests per minute.)*"
+            )
+        elif '503' in error_msg or 'unavailable' in error_msg or 'high demand' in error_msg:
+            assistant_content = (
+                "⚠️ **High Server Demand**\n\n"
+                "Google's AI model is temporarily experiencing traffic spikes. "
+                "Please wait 5-10 seconds and send your message again."
             )
         elif '404' in error_msg or 'not found' in error_msg:
             assistant_content = (
