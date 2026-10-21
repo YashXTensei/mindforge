@@ -210,9 +210,9 @@ def chat(conversation_id, user_message, user):
             )
         else:
             assistant_content = (
-                "❌ **Processing Error**\n\n"
-                "I apologize, but I encountered an unexpected error while generating a response. "
-                "Please try submitting your query again in a few moments."
+                f"❌ **Processing Error**\n\n"
+                f"**Error Details:** `{str(e)}`\n\n"
+                f"Please check your server terminal or run `python test_gemini.py` to diagnose."
             )
         sources = []
         prompt_tokens = None

@@ -55,7 +55,7 @@ def describe_image(image_path: str) -> dict:
     Returns:
         dict: {'image_type': '...', 'summary': '...', 'description': '...', 'ocr_text': '...'}
     """
-    model_name = settings.RAG_CONFIG.get('VISION_MODEL', 'gemini-3.8-flash')
+    model_name = settings.RAG_CONFIG.get('VISION_MODEL', 'gemini-3.1-flash-lite')
 
     ext = pathlib.Path(image_path).suffix.lower()
     mime_type = MIME_TYPES.get(ext, 'image/jpeg')
@@ -102,7 +102,7 @@ def describe_pdf_pages_batch(image_bytes_list: list[bytes]) -> list[str]:
     if not image_bytes_list:
         return []
 
-    model_name = settings.RAG_CONFIG.get('VISION_MODEL', 'gemini-3.8-flash')
+    model_name = settings.RAG_CONFIG.get('VISION_MODEL', 'gemini-3.1-flash-lite')
     
     prompt = f"""
 You are an expert OCR AI. I am providing you with {len(image_bytes_list)} images, which are scanned pages from a document.
