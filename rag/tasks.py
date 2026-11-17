@@ -174,6 +174,23 @@ def process_document(self, document_id):
             # ⚡ ISOLATED FAILURE — doc processing still succeeds
             logger.warning(f"Document {doc.id}: Knowledge compilation failed (non-fatal): {compile_err}")
 
+        # ── Step 7: Contradiction Detection (Phase 6) ──
+        try:
+            from intelligence.services import detect_contradictions
+            from graph.models import Claim
+
+            new_claims = Claim.objects.filter(
+                user=doc.user,
+                content_type=content_type,
+                object_id=doc.id,
+            ).values_list('id', flat=True)
+
+            if new_claims:
+                detect_contradictions(doc.user, list(new_claims))
+                logger.info(f"Document {doc.id}: Contradiction detection complete")
+        except Exception as contradiction_err:
+            logger.warning(f"Document {doc.id}: Contradiction detection failed (non-fatal): {contradiction_err}")
+
         # ── Done! ──
         doc.mark_completed()
         logger.info(f"Document {doc.id} processed: {len(chunk_objects)} chunks saved")
@@ -295,6 +312,23 @@ def process_note(self, note_id):
         except Exception as compile_err:
             # ⚡ ISOLATED FAILURE — note processing still succeeds
             logger.warning(f"Note {note.id}: Knowledge compilation failed (non-fatal): {compile_err}")
+
+        # ── Step 7: Contradiction Detection (Phase 6) ──
+        try:
+            from intelligence.services import detect_contradictions
+            from graph.models import Claim
+
+            new_claims = Claim.objects.filter(
+                user=note.user,
+                content_type=content_type,
+                object_id=note.id,
+            ).values_list('id', flat=True)
+
+            if new_claims:
+                detect_contradictions(note.user, list(new_claims))
+                logger.info(f"Note {note.id}: Contradiction detection complete")
+        except Exception as contradiction_err:
+            logger.warning(f"Note {note.id}: Contradiction detection failed (non-fatal): {contradiction_err}")
 
         # ── Done! ──
         note.mark_completed()

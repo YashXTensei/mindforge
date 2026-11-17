@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Outlet, Link, useNavigate, useLocation, Navigate } from 'react-router-dom';
-import { LayoutDashboard, StickyNote, LogOut, User, Archive, Search, Bot, Info, Menu, X, Brain, Share2 } from 'lucide-react';
+import { LayoutDashboard, StickyNote, LogOut, User, Archive, Search, Bot, Info, Menu, X, Brain, Share2, Scale } from 'lucide-react';
 import { Button } from './ui/Button';
 
 export default function Layout() {
@@ -30,6 +30,7 @@ export default function Layout() {
         { path: '/chat', name: 'AI Chat', icon: <Bot size={20} /> },
         { path: '/topics', name: 'Topics', icon: <Brain size={20} /> },
         { path: '/graph', name: 'Knowledge Graph', icon: <Share2 size={20} /> },
+        { path: '/contradictions', name: 'Contradictions', icon: <Scale size={20} /> },
         { path: '/profile', name: 'Profile', icon: <User size={20} /> },
         { path: '/about', name: 'About', icon: <Info size={20} /> },
     ];

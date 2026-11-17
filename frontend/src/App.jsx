@@ -13,6 +13,7 @@ import About from './pages/About';
 import Topics from './pages/Topics';
 import DailyReview from './pages/DailyReview';
 import KnowledgeGraph from './pages/KnowledgeGraph';
+import Contradictions from './pages/Contradictions';
 import NotFound from './pages/NotFound';
 
 import { Toaster } from 'react-hot-toast';
@@ -39,6 +40,7 @@ function App() {
                     <Route path="/topics" element={<Topics />} />
                     <Route path="/review" element={<DailyReview />} />
                     <Route path="/graph" element={<KnowledgeGraph />} />
+                    <Route path="/contradictions" element={<Contradictions />} />
                     <Route path="/about" element={<About />} />
                     
                     {/* Catch-all 404 Route */}

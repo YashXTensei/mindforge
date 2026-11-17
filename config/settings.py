@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'rag',
     'learning',
     'graph',
+    'intelligence',
 ]
 
 MIDDLEWARE = [
@@ -166,6 +167,8 @@ SIMPLE_JWT = {
 
 # CORS — Dynamic from .env
 CORS_ALLOWED_ORIGINS = env.list('CORS_ALLOWED_ORIGINS', default=[
+    'http://localhost:5180',
+    'http://127.0.0.1:5180',
     'http://localhost:5173',
     'http://127.0.0.1:5173',
 ])

@@ -24,6 +24,7 @@ urlpatterns = [
     path('api/rag/', include('rag.urls')),
     path('api/learning/', include('learning.urls')),
     path('api/graph/', include('graph.urls')),
+    path('api/intelligence/', include('intelligence.urls')),
 ]
 
 if settings.DEBUG:

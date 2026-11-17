@@ -15,6 +15,7 @@ from django.db import models
 from django.conf import settings
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
+from pgvector.django import VectorField
 
 from learning.models import TopicMastery
 
@@ -114,6 +115,9 @@ class Claim(models.Model):
     source = GenericForeignKey('content_type', 'object_id')
 
     created_at = models.DateTimeField(auto_now_add=True)
+
+    # Vector embedding for contradiction detection (Phase 6)
+    embedding = VectorField(dimensions=1024, null=True, blank=True)
 
     class Meta:
         indexes = [

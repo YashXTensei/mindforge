@@ -331,7 +331,7 @@ Learning velocity chart (topics mastered per week), personalized forgetting curv
 
 ## Exit Criteria
 
-- [ ] Contradiction Detection surfaces real conflicts between documents with source citations
+- [x] Contradiction Detection surfaces real conflicts between documents with source citations
 - [ ] Cross-Document Synthesis generates meaningful insight cards connecting different uploads
 - [ ] Learning velocity chart and forgetting curves render with real data
 - [ ] Intelligence Report generates on-demand and contains actionable insights
