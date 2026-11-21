@@ -7,102 +7,109 @@ This document tracks everything built in MindForge, what remains to be built, an
 ## 🟢 What Has Been Built So Far (Current State)
 
 ### 1. Core Platform & User Accounts
-- **User Authentication:** Registration, Login, Logout (JWT-based).
+- **User Authentication:** Registration, Login, Logout (JWT-based with SimpleJWT token rotation).
 - **Taxonomy System:** Categories and Tags for organizing knowledge.
-- **Search System:** Global full-text search across Notes, Documents, and Resources using PostgreSQL.
+- **Search System:** Global full-text search across Notes, Documents, and Resources using PostgreSQL `tsvector`.
 
 ### 2. Notes & Resources (Phase 1 & 2)
 - **Notes Module:** Markdown-based notes editor with CRUD operations, pinning, categorization, and tagging.
 - **Resources Vault:** Bookmark manager to store and organize URLs/links.
-- **PDF Vault:** File upload system for PDF storage.
+- **PDF Vault:** File upload system for PDF storage with Cloudinary backing.
 
 ### 3. RAG Engine (Phase 3)
 - **Document Ingestion (Celery):** Background processing pipeline for documents using Celery and Redis. Auto-triggers on upload.
 - **Text Extraction:** Uses PyMuPDF (`fitz`) to extract text layer from PDFs.
 - **Token-Aware Chunking:** Uses `tiktoken` (cl100k_base) to chunk text with specific limits (500 tokens) and overlap (50 tokens).
-- **Vector Embeddings:** Provider pattern implemented. Currently uses Cohere (`embed-english-v3.0`).
-- **Vector Database:** PostgreSQL with `pgvector` extension.
+- **Vector Embeddings:** Provider pattern implemented. Uses Cohere (`embed-english-v3.0`, 1024 dimensions).
+- **Vector Database:** PostgreSQL with `pgvector` extension and HNSW indexing.
 - **Semantic Search:** Uses `CosineDistance` to find the most relevant chunks.
-- **AI Chat (Gemini):** Context-aware chatbot in the UI. Prioritizes Vault context but falls back to general knowledge seamlessly. Formats errors elegantly.
+- **AI Chat (Gemini):** Context-aware chatbot in the UI. Prioritizes Vault context with source citations, but falls back to general knowledge seamlessly.
 - **Database Hygiene:** `GenericRelation` implemented to cascade-delete Chunks/Embeddings automatically when a Document/Note is deleted.
 
 ### 4. Image Intelligence (Phase 3.5)
-- **Standalone Image Extraction:** Uploaded images (.png, .jpg) are now processed inline using Google Gemini Vision (model: `models/gemini-3.6-flash`).
+- **Standalone Image Extraction:** Uploaded images (.png, .jpg) are processed inline using Google Gemini Vision (`gemini-3.1-flash-lite`).
 - **Polymorphic Extractor Pattern:** Extractor logic refactored into `BaseExtractor`, `PDFExtractor`, and `ImageExtractor`.
+- **Scanned PDF Math OCR:** Fallback to batch page rendering with Gemini Vision for math-heavy scanned documents.
 
-### 5. Active Learning Engine (Phase 4) - NEW!
+### 5. Active Learning Engine (Phase 4)
 - **Topic Extraction:** Automatically extracts learning topics from uploaded PDFs and Notes using Gemini.
 - **Mastery Tracking (SM-2):** Tracks user confidence on each topic using the SM-2 Spaced Repetition algorithm.
-- **Re-upload & Duplicate Protection:** Uses case-insensitive fuzzy matching to deduplicate topics when similar files are uploaded.
-- **Daily Review Session:** Interactive MCQ quiz UI that tests users on due topics. AI generates questions and "Why am I reviewing this?" context on the fly.
+- **Re-upload & Duplicate Protection:** Uses case-insensitive fuzzy matching to deduplicate topics across uploads.
+- **Daily Review Session:** Interactive MCQ quiz UI that tests users on due topics. AI generates questions and "Why am I reviewing this?" context on the fly with RAG context chunks.
 - **Mobile Responsiveness:** Added hamburger menu, mobile-friendly navigation, and auto-hiding chat sidebar.
-- **Error Handling:** Graceful API and UI handling for rate limits, registration/login failures, and quiz generation errors.
-- **Phase 4 Hardening:** 15 major fixes implemented, including RAG-based context retrieval for questions, fully functional SM-2 scoring, robust Gemini output validation, preserved review history on document deletion, and significant performance optimizations.
+- **Phase 4 Hardening:** 15 major fixes implemented, including RAG-based context retrieval for questions, fully functional SM-2 scoring, robust Gemini output validation, preserved review history on document deletion, and performance optimizations.
+
+### 6. Knowledge Compiler & Graph (Phase 5)
+- **Knowledge Compiler:** Celery task extracts factual Claims with evidence quotes from documents and notes.
+- **Semantic Relationship Detection:** AI maps Prerequisite (`PREREQ`) and Related (`RELATED`) connections between topics with confidence scores and reasoning.
+- **Interactive Knowledge Graph (2D):** Force-directed graph (`react-force-graph-2d`) where nodes = topics, node color = mastery level (red → yellow → green), and edges = prerequisite links.
+- **Knowledge Gap Analysis:** BFS graph traversal that analyzes prerequisite chains to answer "What am I missing to learn X?", highlighting unlearned prerequisites.
+- **Blind Spot Detection:** Visual identification of isolated topics that lack prerequisite or related connections.
+
+### 7. Contradiction Radar (Phase 6.1) — NEW!
+- **`intelligence` Django App:** Model `Contradiction` tracking opposing claims (`claim_a`, `claim_b`), severity level (low, medium, high), AI explanation, and reconciliation status.
+- **Claim Vector Embeddings:** Added 1024-dimension `VectorField` on `Claim` model via pgvector, embedded with Cohere Embed v3.
+- **Two-Stage Conflict Pipeline:** Fast CosineDistance filtering (<0.35) identifies claim candidates from different sources, followed by structured LLM verification using Gemini 3.1 Flash-Lite.
+- **Celery Integration:** Step 7 in document and note processing pipelines triggers automated contradiction detection non-fatally.
+- **Contradiction Radar UI (`/contradictions`):** Side-by-side claim comparison with source attribution, topic tags, evidence quotes, AI conflict reasoning, and interactive "Mark as Reconciled" workflow.
+- **Dashboard Alert:** Real-time Knowledge Conflicts banner alerting users to contradictions across their vault with one-click navigation to resolve them.
 
 ---
 
 ## 🔴 What is Pending (To-Do)
 
-### Phase 5 (The Network Effect - Interactive Graph)
-- [ ] Backend graph extraction: Knowledge Compiler analyzes connections between chunks/topics and builds semantic nodes (Claims) and edges (Relationships like PREREQ, RELATED).
-- [ ] Build 2D Force-Directed Graph UI (using `react-force-graph-2d`).
-- [ ] Implement graph filtering, zooming, and node click actions.
-- [ ] Knowledge Gap Analysis & Blind Spot Detection.
+### Phase 6 (Remaining Sub-phases)
+- [ ] **Phase 6.3 — Learning Analytics Dashboard (NEXT):**
+  - Learning velocity chart (topics mastered per week)
+  - Retention & forgetting curves per topic
+  - Weakest and strongest topic rankings
+  - Knowledge coverage map (mastered vs stored)
+  - Frontend `/analytics` page with Recharts visualizations
+- [ ] **Phase 6.2 — Cross-Document Synthesis (Optional):**
+  - "Insight Cards" surfacing non-obvious conceptual connections across different sources
+- [ ] **Phase 6.4 — Intelligence Report (Optional/Deferred):**
+  - On-demand intelligence summary report synthesizing newly acquired topics, contradictions, and decayed memories
 
-### Phase 6 (Intelligent Agents - "Your Second Brain at Work")
-- [ ] **Curiosity Engine:** Background agent that finds connections between old and new notes and sends "Did you know?" notifications.
-- [ ] **The "Devil's Advocate" Agent:** Agent that challenges your ideas when you write notes.
-- [ ] **Content Synthesizer:** Weekly summary agent that emails/notifies you about what you learned.
-
-### Phase 7 (Polish, Security & Deployment)
-- [ ] Comprehensive Testing (`pytest`).
-- [ ] UI/UX final touch-ups (skeletons, dark mode consistency).
+### Phase 7 (Study Planner & Daily Brief)
+- [ ] Goal creation with target completion dates and auto-linked vault content
+- [ ] AI-generated week-by-week study schedule prioritized by mastery and prerequisite chains
+- [ ] Dynamic progress tracking based on actual SM-2 confidence levels
+- [ ] Daily Brief on login summarizing weekly focus and due reviews
 
 ---
 
 ## 📅 Chronological Changelog
 
+### November 9-18, 2026 (Phase 6.1 Contradiction Detection, Model Migration & Port Separation)
+- **Google GenAI SDK 2.x & Model Migration:** Upgraded from deprecated `google-generativeai` SDK to official `google-genai` (2.14.0+). Migrated retired models (gemini-1.5/2.0/2.5) to active production models:
+  - Chat & Quiz Generation: `gemini-3.5-flash`
+  - Extraction, Vision & Conflict Verification: `gemini-3.1-flash-lite`
+- **Error Handling & Resilience:** Added 503 high-demand retry handling in chat, Markdown fence stripping in JSON parsers, and NoneType guardrails across `generation.py` and `graph/services.py`.
+- **Phase 6.1 Contradiction Detection:** Built full-stack `intelligence` app:
+  - Database schema: `Contradiction` model with foreign keys to `Claim`, severity choices, and resolution fields.
+  - Vector embeddings added to `Claim` model (`VectorField(1024)`).
+  - Detection service using Cohere claim embedding + pgvector cosine similarity + Gemini 3.1 Flash-Lite JSON confirmation.
+  - Celery pipeline Step 7 added to both `process_document` and `process_note`.
+  - Frontend Contradictions page (`/contradictions`) with filter tabs, side-by-side comparison cards, and reconciliation modal.
+  - Dashboard alert banner highlighting unresolved knowledge conflicts.
+- **Frontend Port Standardization (Port 5180):** Configured Vite dev server to use port `5180` with `strictPort: true` to prevent collisions with parallel local projects (e.g., YatraSetu on 5173). Updated backend `CORS_ALLOWED_ORIGINS` in `config/settings.py` and `.env`.
+
+### September 10-24, 2026 (Phase 5: Knowledge Compiler & Interactive Graph)
+- **Knowledge Compiler:** Implemented Celery tasks extracting atomic claims and prerequisite/related relationships between topics.
+- **Graph Visualization:** Built interactive 2D Force-Directed Graph UI using `react-force-graph-2d` with topic mastery coloring and edge tooltips.
+- **Gap Analysis Algorithm:** Implemented BFS graph traversal to calculate missing prerequisites and visualize blind spots.
+- **CI Pipeline:** Added GitHub Actions for automated backend tests and frontend Vite builds.
+
 ### September 6-7, 2026 (Phase 4 Hardening — 15 Bug Fixes & Improvements)
-- **CRITICAL: Fixed Document Context Retrieval:** `DailyReviewView` now uses `rag.search.semantic_search` to fetch relevant chunks for question generation. Previously, all PDF topics fell back to generic knowledge because `Document` has no `text_content` field.
-- **SM-2 Algorithm Fixed:** Changed quality scoring from 4→5 (correct) so Easiness Factor actually changes (+0.1 per correct). Also applied EF formula on incorrect answers (was skipped before). SM-2 spaced repetition now works as intended.
-- **Gemini Output Validation:** Added `validate_question()` helper to gracefully skip malformed AI output instead of crashing with `DataError` on `CharField(max_length=1)`.
+- **Fixed Document Context Retrieval:** `DailyReviewView` now uses `rag.search.semantic_search` to fetch relevant chunks for question generation.
+- **SM-2 Algorithm Fixed:** Changed quality scoring from 4→5 (correct) so Easiness Factor actually changes (+0.1 per correct). Applied EF formula on incorrect answers.
+- **Gemini Output Validation:** Added `validate_question()` helper to gracefully skip malformed AI output.
 - **Review History Preserved:** Changed `ReviewItem.mastery` from `CASCADE` to `SET_NULL`. Deleting documents no longer wipes historical quiz data.
-- **Session Score Calculated:** `ReviewSession.score` is now computed on completion (was always `None`).
-- **Security:** ChatView no longer leaks raw exception details to frontend.
-- **Performance:** Fixed N+1 queries in semantic search (`select_related`), ConversationListView (annotated queries + DISTINCT ON).
-- **Pipeline Hardening:** Concurrency guard on processing trigger, orphan chunk cleanup, `updated_at` fix in ProcessingMixin, redundant title update prevention, `requests.get` timeout.
-- **Prompt Quality:** Source-first strategy in question generation, no meta-phrases ("Based on the provided notes..."), improved topic extraction for unconventional material.
-- **New Field:** `extract_topics` boolean on Document and Note — users can opt out of AI topic extraction for personal/reference material.
-- **Tests:** Added boundary tests in `learning/tests.py` (validation, deletion integrity, source-first prompts).
+- **Session Score Calculated:** `ReviewSession.score` is now computed on completion.
+- **New Field:** `extract_topics` boolean on Document and Note.
 
-### August 31 - September 1, 2026 (Deployment, Math OCR, Multi-Model Routing & Polish)
-- **Deployment & Cloudinary:** Configured production environment with Heroku, PostgreSQL, Redis (Celery), and Cloudinary `RawMediaCloudinaryStorage`.
-- **Advanced OCR (Math PDFs):** PyMuPDF `get_text` falls back to generating JPEGs for empty/scanned pages. Built `describe_pdf_pages_batch` in `rag/vision.py` to send batches of 10 pages to Gemini Vision, drastically improving math symbol and scanned document transcription.
-- **Frontend Math Rendering:** Integrated `remark-math` and `rehype-katex` in `ReactMarkdown`. Configured `{strict: false}` to gracefully handle malformed AI block boundaries without red crash screens.
-- **Multi-Model Routing:** Split AI responsibilities across specific models to optimize speed and cost:
-  - `CHAT_MODEL` (gemini-3.7-flash) for AI Chat
-  - `QUESTION_MODEL` (gemini-3.6-flash) for Quiz Generation
-  - `VISION_MODEL` & `EXTRACTION_MODEL` (gemini-3.5-flash-lite) for OCR and Topic Extraction
-- **API Stability:** Added explicit 45s timeouts to `google.generativeai` calls to prevent Gunicorn workers from locking up on Heroku. Added context (previous 4 questions and user mastery stats) to batch question generation to prevent repetitive questions.
-
-
-### July 30 - August 8, 2026 (Foundation & RAG Engine Complete)
+### July 30 - August 25, 2026 (Foundations, RAG Engine & Phase 4 Learning Engine)
 - Setup Django, Celery, Redis, and PostgreSQL (`pgvector`).
 - Built RAG Pipeline (Extract -> Chunk -> Embed -> Save).
 - Built Vault UI, Notes UI, and integrated AI Chat Sidebar.
-- Implemented `GenericRelation`, standalone Image OCR, rate limiting, and custom DRF exception handlers.
-
-### August 25, 2026 (Phase 4: Active Learning Engine Complete)
-- **Backend:** Created `learning` app, `TopicMastery`, `TopicSource`, `ReviewSession`, `ReviewItem` models.
-- **Algorithm:** Implemented SM-2 Spaced Repetition (`learning/sm2.py`) with progressive confidence building.
-- **Celery:** Hooked Gemini topic extraction into existing RAG pipeline (`process_document` and `process_note`). Added fuzzy matching to prevent duplicates.
-- **Frontend:** Built `/topics` Knowledge Map and `/review` Daily Quiz pages with API integration and smart error handling.
-- **UI Fixes:** Added mobile responsiveness (hamburger menu, sliding chat sidebar). Fixed Toaster messages for auth errors.
-
-<!-- phase 4 -->
-
-### August 18, 2026 :- Added "Learning" app
-### August 19, 2026 :- Added "generation.py"
-### August 20, 2026 :- Added "service.py"
-
-proxy commits count : 5
+- Phase 4 Active Learning Engine with SM-2 Spaced Repetition, `/topics` Knowledge Map, and `/review` Daily Quiz pages.

@@ -278,6 +278,8 @@ Transform raw text (chunks, embeddings) into a structured knowledge representati
 - [x] Blind spot visualization in Knowledge Graph (isolated nodes)
 - [x] CI pipeline (GitHub Actions: backend tests + frontend build)
 
+✅ Phase 5 complete {date: 24th September 2026}
+
 ---
 
 # Phase 6 — Knowledge Intelligence ⭐⭐⭐
@@ -292,25 +294,25 @@ Build cross-document intelligence: contradiction detection, knowledge synthesis,
 
 ## Sub-Phases
 
-### Phase 6.1 — Contradiction Detection (~1 week)
+### Phase 6.1 — Contradiction Detection (~1 week) ✅ DONE (9 Nov 2026)
 
 When new content is processed, compare its claims against existing claims in the knowledge base. If Document A says "X is always true" and Document B says "X is not necessarily true" → surface a Knowledge Conflict alert with both sources and context comparison.
 
-**Architecture:** New `intelligence` app. `Contradiction` model → cosine similarity on claim embeddings → Gemini confirmation → alert UI.
+**Architecture:** New `intelligence` app. `Contradiction` model → cosine similarity on claim embeddings (pgvector 1024d) → Gemini 3.1 Flash-Lite confirmation → Contradiction Radar UI (`/contradictions`) + Dashboard conflict banner.
 
-### Phase 6.2 — Cross-Document Synthesis (~1 week)
-
-On-demand analysis of relationships across documents. Generate "Insight Cards" — "The Observer Pattern from your Design Patterns PDF is the same principle behind React's useEffect. Both are about subscribing to state changes."
-
-**Architecture:** `InsightCard` model → topic-pair analysis across different sources → Gemini synthesis → card carousel UI.
-
-### Phase 6.3 — Learning Analytics Dashboard (~1 week)
+### Phase 6.3 — Learning Analytics Dashboard (~1 week) ⏳ NEXT FOCUS
 
 Learning velocity chart (topics mastered per week), personalized forgetting curves per topic, strength/weakness rankings, knowledge coverage map (mastered vs. just stored), study pattern insights (time-of-day performance analysis).
 
 **Architecture:** Django ORM aggregation queries → Recharts visualizations → `/analytics` page.
 
-### Phase 6.4 — Intelligence Report (~3-4 days)
+### Phase 6.2 — Cross-Document Synthesis (Optional / Deferred)
+
+On-demand analysis of relationships across documents. Generate "Insight Cards" — "The Observer Pattern from your Design Patterns PDF is the same principle behind React's useEffect. Both are about subscribing to state changes."
+
+**Architecture:** `InsightCard` model → topic-pair analysis across different sources → Gemini synthesis → card carousel UI.
+
+### Phase 6.4 — Intelligence Report (Optional / Deferred)
 
 **Phase 1:** On-demand "Generate Intelligence Report" button — new contradictions, new connections, decaying topics, suggested focus areas, learning velocity trend.
 
@@ -332,9 +334,9 @@ Learning velocity chart (topics mastered per week), personalized forgetting curv
 ## Exit Criteria
 
 - [x] Contradiction Detection surfaces real conflicts between documents with source citations
-- [ ] Cross-Document Synthesis generates meaningful insight cards connecting different uploads
-- [ ] Learning velocity chart and forgetting curves render with real data
-- [ ] Intelligence Report generates on-demand and contains actionable insights
+- [ ] Learning velocity chart and forgetting curves render with real data (Phase 6.3)
+- [ ] Cross-Document Synthesis generates meaningful insight cards connecting different uploads (Optional)
+- [ ] Intelligence Report generates on-demand and contains actionable insights (Optional)
 - [ ] System proactively surfaces insights without the user asking
 
 ---
@@ -390,9 +392,10 @@ Aug 2026      → Phase 3.5 (Improvements)         ✅ 8 Aug
                   https://www.mindtensei.me
                 ════════════════════════════
 Aug-Sep 2026  → Phase 4 (Learning Engine)        ✅ 31 Aug (hardened 7 Sep)
-Sep 2026      → Phase 5 (Knowledge Graph)        🔧 ~95% done
-Sep-Oct 2026  → Phase 6 (Knowledge Intelligence) ⏳ next
-Oct 2026      → Phase 7 (Study Planner & Brief)  ⏳ planned
+Sep 2026      → Phase 5 (Knowledge Graph)        ✅ 24 Sep
+Nov 2026      → Phase 6.1 (Contradiction Radar)  ✅ 9 Nov
+Nov 2026      → Phase 6.3 (Learning Analytics)   ⏳ NEXT
+Nov-Dec 2026  → Phase 7 (Study Planner & Brief)  ⏳ planned
                 ════════════════════════════
                   FULL PRODUCT (~5 months)
                 ════════════════════════════
@@ -408,7 +411,7 @@ Oct 2026      → Phase 7 (Study Planner & Brief)  ⏳ planned
 | Environment variables (.env) | ✅ Phase 0 |
 | Cloudinary file storage | ✅ Phase 2 |
 | API tests (pytest) | 🟡 Partial — critical-path tests needed |
-| CI (GitHub Actions) | ⏳ Phase 5 closure |
+| CI (GitHub Actions) | ✅ Phase 5 closure |
 | Deploy to Heroku + Vercel | ✅ Phase 3 (MIP) |
 
 ---
@@ -436,11 +439,11 @@ without leaving a single workspace.
 
 # Tech Debt & Deferred Items
 
-| Item | Priority | When |
-|---|---|---|
-| Gemini SDK migration (`google.generativeai` → `google.genai`) | 🔴 High | Phase 5 closure |
-| Cloudinary Direct Upload (bypass Heroku timeout) | 🟠 Medium | Post-Phase 6 |
-| Celery night worker (reduce API rate limits) | 🟢 Low | Post-Phase 7 |
-| API Key/Model fallback system | 🟢 Low | Production hardening |
-| Gemini model version updates | 🟢 Low | Ongoing |
-| Full test coverage sprint | 🟢 Low | Post-Phase 7 |
+| Item | Priority | When | Status |
+|---|---|---|---|
+| Gemini SDK migration (`google.generativeai` → `google.genai`) | 🔴 High | Phase 5 closure | ✅ Complete |
+| Gemini Model updates (`gemini-3.5-flash`, `gemini-3.1-flash-lite`) | 🔴 High | Phase 6.1 | ✅ Complete |
+| Frontend Dedicated Port (5180 with strictPort) | 🟠 Medium | Post-Phase 6.1 | ✅ Complete |
+| Cloudinary Direct Upload (bypass Heroku timeout) | 🟠 Medium | Post-Phase 6 | ⏳ Deferred |
+| Celery night worker (reduce API rate limits) | 🟢 Low | Post-Phase 7 | ⏳ Planned |
+| Full test coverage sprint | 🟢 Low | Post-Phase 7 | ⏳ Planned |

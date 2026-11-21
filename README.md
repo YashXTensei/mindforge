@@ -44,10 +44,11 @@ MindForge is an AI-powered personal knowledge base and operating system. It goes
 - **📄 Document Vault (RAG Pipeline):** Upload PDFs and images. MindForge automatically extracts text, chunks it intelligently, and generates high-dimensional vector embeddings using Cohere.
 - **🔎 Semantic Search:** Don't just search for exact keywords. Find notes and documents by their *meaning* using PostgreSQL's `pgvector` HNSW index.
 - **📝 Smart Notes:** Write, format, and organize your thoughts with Markdown support.
-- **💬 AI Chat (Gemini 3.6 Flash):** Chat directly with your vault. The AI retrieves relevant context from your documents and cites its sources when answering.
+- **💬 AI Chat (Gemini 3.5 Flash):** Chat directly with your vault. The AI retrieves relevant context from your documents and cites its sources when answering.
 - **🧠 SM-2 Spaced Repetition Engine:** AI auto-extracts topics from your uploads, generates daily quizzes, and uses the SM-2 algorithm to space reviews for optimal long-term retention.
 - **🕸️ Knowledge Graph & Compiler:** AI analyzes your documents to discover prerequisite and related connections between topics, extracts factual claims with evidence quotes, and visualizes everything as an interactive force-directed graph.
 - **📊 Gap Analysis:** Click any topic in the graph to see its prerequisites. BFS algorithm identifies missing and weak foundational topics, giving you a personalized learning path.
+- **⚖️ Contradiction Radar (Phase 6.1):** Automatically detects conflicting claims across documents using vector similarity (pgvector 1024d) and Gemini verification, presenting side-by-side claim comparison and reconciliation tools.
 - **⚡ Background Processing:** Heavy tasks (like embedding generation, text extraction, and knowledge compilation) are offloaded to Celery & Redis workers to keep the UI buttery smooth.
 - **🔐 JWT Authentication & User Isolation:** Secure, token-based authentication ensuring your knowledge base is completely private.
 - **🏷️ Categories & Tags:** Organize your notes effectively with customizable categories and tagging system.
@@ -106,6 +107,7 @@ mindforge/
 ├── search/        # Global search and semantic search APIs
 ├── learning/      # SM-2 spaced repetition, topic mastery, daily review
 ├── graph/         # Knowledge Graph, compiler, gap analysis
+├── intelligence/  # Contradiction detection, knowledge conflict alerts
 ├── taxonomy/      # Categories and tags
 ├── config/        # Main Django configuration and routing
 ├── frontend/      # React Vite application
@@ -166,7 +168,7 @@ npm install
 npm run dev
 ```
 
-The frontend will be available at `http://localhost:5173`.
+The frontend will be available at `http://localhost:5180`.
 
 ---
 

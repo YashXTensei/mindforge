@@ -158,6 +158,53 @@ MindForge is an AI learning companion that remembers what you're forgetting.
 
 ---
 
+## 2026-09-24 — Phase 5 Knowledge Graph & Compiler
+
+### Explicit Topic ID Mapping for Relationships
+**Decision:** When calling the LLM to identify prerequisite or related connections between topics, pass the list of known `TopicMastery` IDs and names rather than allowing free-form string matching.
+**Reason:** Free-form generation led to phantom nodes and edge mismatches. Grounding relations to verified topic IDs ensured exact graph topology in `TopicRelationship`.
+
+### 2D Force-Directed Graph vs 3D
+**Decision:** Selected `react-force-graph-2d` canvas rendering over Three.js/3D.
+**Reason:** 2D canvas is lightweight, has near-zero frame drops on lower-spec laptops, supports intuitive pan/zoom gestures, and cleanly displays node mastery colors (Red/Yellow/Green).
+
+---
+
+## 2026-11-09 — Gemini SDK 2.x Upgrade & Model Migration
+
+### Official `google-genai` SDK Migration
+**Decision:** Fully migrate from legacy `google-generativeai` (0.8.x) to official `google-genai` (2.x) with the unified `genai.Client()`.
+**Reason:** Google deprecated 1.5-flash and early 2.0 models for new API calls. The new SDK provides native Pydantic schema validation, resilient connection handling, and direct alignment with current Gemini 3.x series models.
+
+### Multi-Tier Model Allocation
+**Decision:** Split system roles across two stable models:
+- `gemini-3.5-flash`: Chat synthesis and Daily Review question generation (demands high reasoning and adherence to source context).
+- `gemini-3.1-flash-lite`: Extraction, Vision OCR, and Contradiction Verification (sub-second latency, zero bloat, high throughput).
+
+---
+
+## 2026-11-09 — Phase 6.1 Contradiction Detection Strategy
+
+### Two-Stage Detection Pipeline (pgvector + LLM Verification)
+**Decision:** Instead of passing every document to an LLM to compare against all other documents (which would blow up context windows and API costs exponentially), use a two-stage filter:
+1. Candidate Search: Compute claim vector embeddings (Cohere 1024d) and use `pgvector` CosineDistance (< 0.35 threshold) across opposing sources.
+2. Conflict Verification: Pass candidate claim pairs to `gemini-3.1-flash-lite` with structured output schemas to confirm whether claims genuinely contradict each other and assess severity (low/medium/high).
+**Reason:** $O(N)$ vector query vs $O(N^2)$ LLM calls. Ensures high precision and prevents false positives.
+
+### Non-Blocking Celery Pipeline (Step 7)
+**Decision:** Contradiction detection runs as an isolated, try-except wrapped Step 7 in the Celery document and note ingestion pipeline.
+**Reason:** If an LLM spike or temporary rate limit occurs during conflict check, the core document upload, chunking, and topic extraction are never rolled back.
+
+---
+
+## 2026-11-17 — Dedicated Frontend Port Standardization
+
+### Vite Port 5180 with `strictPort: true`
+**Decision:** Set MindForge frontend server port explicitly to `5180` with `strictPort: true` instead of default Vite `5173`.
+**Reason:** Eliminates collisions with other local projects (such as `YatraSetu` running on 5173). `strictPort: true` guarantees Vite will not silently increment to an arbitrary port if 5180 is busy.
+
+---
+
 ## Timeline
 
 | Date | Event |
@@ -168,3 +215,6 @@ MindForge is an AI learning companion that remembers what you're forgetting.
 | 14 Aug 2026 | MIP Deployed to production (mindtensei.me) |
 | 25 Aug 2026 | Phase 4 Complete (Learning Engine deployed) |
 | 7 Sep 2026 | Phase 4 Hardening Complete (15 fixes) |
+| 24 Sep 2026 | Phase 5 Complete (Knowledge Compiler & Interactive Graph) |
+| 9 Nov 2026 | Phase 6.1 Complete (Contradiction Radar & Model Migration) |
+| 17 Nov 2026 | Frontend Dedicated Port (5180) Standardized |

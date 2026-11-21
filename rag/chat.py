@@ -143,17 +143,42 @@ def chat(conversation_id, user_message, user):
         parts=[types.Part(text=user_message)],
     ))
 
-    # Call Gemini with new SDK
-    model_name = settings.RAG_CONFIG['CHAT_MODEL']
+    # Call Gemini with new SDK + automatic fallback for high demand/503 spikes
+    primary_model = settings.RAG_CONFIG['CHAT_MODEL']
+    fallback_model = settings.RAG_CONFIG.get('EXTRACTION_MODEL', 'gemini-3.1-flash-lite')
+    models_to_try = [primary_model]
+    if fallback_model and fallback_model != primary_model:
+        models_to_try.append(fallback_model)
+
+    model_name = primary_model
+    response = None
+    last_error = None
+
+    for attempt_model in models_to_try:
+        try:
+            response = gemini_client.models.generate_content(
+                model=attempt_model,
+                contents=contents,
+                config=types.GenerateContentConfig(
+                    system_instruction=system_prompt,
+                ),
+            )
+            if response and response.text:
+                model_name = attempt_model
+                last_error = None
+                break
+        except Exception as e:
+            last_error = e
+            err_str = str(e).lower()
+            if ('503' in err_str or 'unavailable' in err_str or 'high demand' in err_str or 'timeout' in err_str) and attempt_model != models_to_try[-1]:
+                logger.warning(f"Model '{attempt_model}' failed with transient error: {e}. Falling back to '{models_to_try[-1]}'...")
+                time.sleep(0.5)
+                continue
+            break
 
     try:
-        response = gemini_client.models.generate_content(
-            model=model_name,
-            contents=contents,
-            config=types.GenerateContentConfig(
-                system_instruction=system_prompt,
-            ),
-        )
+        if last_error is not None:
+            raise last_error
 
         assistant_content = response.text
         if not assistant_content:

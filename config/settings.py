@@ -226,8 +226,8 @@ RAG_CONFIG = {
     'EMBEDDING_BATCH_SIZE': 96,
     'EMBEDDING_MAX_RETRIES': 3,
     'CHAT_PROVIDER': 'gemini',
-    'CHAT_MODEL': env('GEMINI_CHAT_MODEL', default='gemini-3.5-flash'),
-    'QUESTION_MODEL': env('GEMINI_QUESTION_MODEL', default='gemini-3.5-flash'),
+    'CHAT_MODEL': env('GEMINI_CHAT_MODEL', default='gemini-3.5-flash-lite'),
+    'QUESTION_MODEL': env('GEMINI_QUESTION_MODEL', default='gemini-3.5-flash-lite'),
     'VISION_MODEL': env('GEMINI_VISION_MODEL', default='gemini-3.1-flash-lite'),
     'EXTRACTION_MODEL': env('GEMINI_EXTRACTION_MODEL', default='gemini-3.1-flash-lite'),
     'CHUNK_SIZE': 500,        # tokens per chunk
